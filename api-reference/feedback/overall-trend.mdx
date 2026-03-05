@@ -1,0 +1,188 @@
+---
+title: "Overall Feedback Trend"
+api: "GET /external-api/v1/feedback/overall-trend"
+description: "Get a trend line for total completed submissions, grouped by date interval or by business (location)."
+---
+
+This endpoint returns submission counts grouped either by a dynamic date interval or by business (location ID). Only completed submissions with `is_complete = 1` are counted.
+
+### Grouping Modes
+
+Use the `groupBy` query parameter to control the output format:
+
+**`groupBy=date`** (default) — Groups submissions by a dynamic time interval based on the date range:
+
+| Date Range | Interval | Label Example |
+|---|---|---|
+| ≤ 1 day | Hour | `14:00` |
+| ≤ 1 week | Day of week | `Monday` |
+| ≤ 1 month | Date | `10 Jan` |
+| ≤ 2 years | Month | `Jan 2026` |
+| > 2 years | Year | `2026` |
+
+**`groupBy=business`** — Groups submissions by location ID, returning a count for each business location.
+
+## Request
+
+### Headers
+
+| Header | Value | Required |
+|---|---|---|
+| `X-API-Key` | Your API key (`rfk_...`) | Yes |
+| `X-Team-Id` | Numeric team ID (required for global API keys) | Conditional |
+
+### Query Parameters
+
+<ParamField query="startDate" type="string" required>
+  Start of the date range. Must be a valid ISO 8601 datetime string.
+
+  **Example:** `2026-01-01T00:00:00.000Z`
+</ParamField>
+
+<ParamField query="endDate" type="string" required>
+  End of the date range. Must be a valid ISO 8601 datetime string. Must be after `startDate`.
+
+  **Example:** `2026-02-19T23:59:59.999Z`
+</ParamField>
+
+<ParamField query="formIds" type="string">
+  Comma-separated list of form IDs (MongoDB ObjectIds) to filter by. If omitted, includes all forms accessible to your API key.
+
+  **Example:** `665a1b2c3d4e5f6a7b8c9d0e,665a1b2c3d4e5f6a7b8c9d0f`
+</ParamField>
+
+<ParamField query="locationIds" type="string">
+  Comma-separated list of location IDs (numeric) to filter by. Only forms assigned to these locations will be included.
+
+  **Example:** `1561,1562`
+</ParamField>
+
+<ParamField query="groupBy" type="string">
+  Grouping mode. Either `date` (default) or `business`.
+
+  **Default:** `date`
+</ParamField>
+
+### Example Request
+
+<Tabs>
+  <Tab title="cURL (by date)">
+    ```bash
+    curl -X GET "https://forms-api.rannkly.com/external-api/v1/feedback/overall-trend?startDate=2026-02-10T00:00:00Z&endDate=2026-02-16T23:59:59Z&groupBy=date" \
+      -H "X-API-Key: rfk_your_api_key"
+    ```
+  </Tab>
+  <Tab title="cURL (by business)">
+    ```bash
+    curl -X GET "https://forms-api.rannkly.com/external-api/v1/feedback/overall-trend?startDate=2026-01-01T00:00:00Z&endDate=2026-02-19T23:59:59Z&groupBy=business&locationIds=1561,1562" \
+      -H "X-API-Key: rfk_your_api_key"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    const response = await fetch(
+      "https://forms-api.rannkly.com/external-api/v1/feedback/overall-trend?" +
+      new URLSearchParams({
+        startDate: "2026-02-10T00:00:00Z",
+        endDate: "2026-02-16T23:59:59Z",
+        groupBy: "date"
+      }),
+      { headers: { "X-API-Key": process.env.RANNKLY_API_KEY } }
+    );
+    const { data } = await response.json();
+    console.log(data);
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import requests
+
+    response = requests.get(
+        "https://forms-api.rannkly.com/external-api/v1/feedback/overall-trend",
+        headers={"X-API-Key": "rfk_your_api_key"},
+        params={
+            "startDate": "2026-02-10T00:00:00Z",
+            "endDate": "2026-02-16T23:59:59Z",
+            "groupBy": "date"
+        }
+    )
+    data = response.json()
+    ```
+  </Tab>
+</Tabs>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  `true` if the request was successful.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  `"Overall feedback trend retrieved successfully"`
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  A key-value map where each key is a date label (when `groupBy=date`) or a location ID string (when `groupBy=business`), and the value is the submission count.
+</ResponseField>
+
+### Example Response (Group by Date)
+
+```json 200
+{
+  "success": true,
+  "message": "Overall feedback trend retrieved successfully",
+  "data": {
+    "Monday": 1607,
+    "Tuesday": 1200,
+    "Wednesday": 980,
+    "Thursday": 1150,
+    "Friday": 1340
+  }
+}
+```
+
+### Example Response (Group by Business)
+
+```json 200
+{
+  "success": true,
+  "message": "Overall feedback trend retrieved successfully",
+  "data": {
+    "1561": 785,
+    "1562": 822
+  }
+}
+```
+
+### Empty Response
+
+```json 200
+{
+  "success": true,
+  "message": "Overall feedback trend retrieved successfully",
+  "data": {}
+}
+```
+
+## Error Responses
+
+### Validation Error (400)
+
+```json 400
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    { "field": "startDate", "message": "startDate is required" }
+  ]
+}
+```
+
+### Missing API Key (401)
+
+```json 401
+{
+  "success": false,
+  "message": "API key is required. Provide via X-API-Key header."
+}
+```

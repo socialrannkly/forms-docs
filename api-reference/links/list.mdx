@@ -1,0 +1,136 @@
+---
+title: "List Private Links"
+api: "GET /external-api/v1/forms/{formId}/links"
+description: "List all private form links generated for a specific form, with pagination."
+---
+
+## Request
+
+### Headers
+
+| Header | Value | Required |
+|---|---|---|
+| `X-API-Key` | Your API key (`rfk_...`) | Yes |
+| `X-Team-Id` | Numeric team ID (required for global API keys) | Conditional |
+
+### Path Parameters
+
+<ParamField path="formId" type="string" required>
+  The MongoDB ObjectId of the form (24-character hex string).
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="page" type="integer" default="1">
+  Page number (1-indexed).
+</ParamField>
+
+<ParamField query="limit" type="integer" default="20">
+  Number of links per page. Maximum: `100`.
+</ParamField>
+
+### Example Request
+
+```bash
+curl -X GET "https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links?page=1&limit=10" \
+  -H "X-API-Key: rfk_your_api_key"
+```
+
+## Response
+
+<ResponseField name="data.links" type="array">
+  Array of link objects, sorted by creation date (newest first).
+
+  <Expandable title="Link Object">
+    <ResponseField name="id" type="string">
+      Unique identifier of the link.
+    </ResponseField>
+    <ResponseField name="token" type="string">
+      The full access token (starts with `tkn_`).
+    </ResponseField>
+    <ResponseField name="label" type="string | undefined">
+      The internal label assigned to this link.
+    </ResponseField>
+    <ResponseField name="contactId" type="string | undefined">
+      The linked contact's ID, if customer data was provided.
+    </ResponseField>
+    <ResponseField name="isActive" type="boolean">
+      Whether the link is currently active. `false` if revoked or submission limit reached.
+    </ResponseField>
+    <ResponseField name="usageCount" type="integer">
+      Number of successful form submissions through this link. Page views do not count.
+    </ResponseField>
+    <ResponseField name="maxUsages" type="integer | undefined">
+      Maximum allowed submissions. `undefined` means unlimited.
+    </ResponseField>
+    <ResponseField name="expiresAt" type="string | undefined">
+      ISO 8601 expiration timestamp.
+    </ResponseField>
+    <ResponseField name="lastUsedAt" type="string | undefined">
+      ISO 8601 timestamp of last usage.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 creation timestamp.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="data.pagination" type="object">
+  <Expandable title="Pagination">
+    <ResponseField name="total" type="integer">
+      Total number of links for this form.
+    </ResponseField>
+    <ResponseField name="page" type="integer">
+      Current page number.
+    </ResponseField>
+    <ResponseField name="limit" type="integer">
+      Items per page.
+    </ResponseField>
+    <ResponseField name="totalPages" type="integer">
+      Total number of pages.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json 200
+{
+  "success": true,
+  "message": "Links retrieved successfully",
+  "data": {
+    "links": [
+      {
+        "id": "665a1b2c3d4e5f6a7b8c9d0e",
+        "token": "tkn_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1",
+        "label": "NPS Survey - Jane Smith",
+        "contactId": "665a1b2c3d4e5f6a7b8c9d0f",
+        "isActive": true,
+        "usageCount": 0,
+        "maxUsages": 1,
+        "expiresAt": "2026-03-15T23:59:59.000Z",
+        "lastUsedAt": null,
+        "createdAt": "2026-02-07T10:30:00.000Z"
+      },
+      {
+        "id": "665a1b2c3d4e5f6a7b8c9d10",
+        "token": "tkn_e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5",
+        "label": "Onboarding - John Doe",
+        "contactId": "665a1b2c3d4e5f6a7b8c9d11",
+        "isActive": true,
+        "usageCount": 1,
+        "maxUsages": 3,
+        "expiresAt": null,
+        "lastUsedAt": "2026-02-06T08:15:00.000Z",
+        "createdAt": "2026-02-05T14:00:00.000Z"
+      }
+    ],
+    "pagination": {
+      "total": 47,
+      "page": 1,
+      "limit": 10,
+      "totalPages": 5
+    }
+  }
+}
+```

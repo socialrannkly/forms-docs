@@ -1,0 +1,167 @@
+---
+title: "NPS Overview"
+api: "GET /external-api/v1/feedback/nps-overview"
+description: "Get a breakdown of Net Promoter Score categories — promoter, passive, and detractor counts."
+---
+
+This endpoint groups submissions by their NPS classification and returns the count for each category. NPS classification is derived from the NPS question answer:
+
+- **Promoter** — score 9–10
+- **Passive** — score 7–8
+- **Detractor** — score 0–6
+
+Only submissions containing an NPS-type question with a valid answer are included.
+
+## Request
+
+### Headers
+
+| Header | Value | Required |
+|---|---|---|
+| `X-API-Key` | Your API key (`rfk_...`) | Yes |
+| `X-Team-Id` | Numeric team ID (required for global API keys) | Conditional |
+
+### Query Parameters
+
+<ParamField query="startDate" type="string" required>
+  Start of the date range. Must be a valid ISO 8601 datetime string.
+
+  **Example:** `2026-01-01T00:00:00.000Z`
+</ParamField>
+
+<ParamField query="endDate" type="string" required>
+  End of the date range. Must be a valid ISO 8601 datetime string. Must be after `startDate`.
+
+  **Example:** `2026-02-19T23:59:59.999Z`
+</ParamField>
+
+<ParamField query="formIds" type="string">
+  Comma-separated list of form IDs (MongoDB ObjectIds) to filter by. If omitted, includes all forms accessible to your API key.
+
+  **Example:** `665a1b2c3d4e5f6a7b8c9d0e,665a1b2c3d4e5f6a7b8c9d0f`
+</ParamField>
+
+<ParamField query="locationIds" type="string">
+  Comma-separated list of location IDs (numeric) to filter by. Only forms assigned to these locations will be included.
+
+  **Example:** `1561,1562`
+</ParamField>
+
+### Example Request
+
+<Tabs>
+  <Tab title="cURL">
+    ```bash
+    curl -X GET "https://forms-api.rannkly.com/external-api/v1/feedback/nps-overview?startDate=2026-01-01T00:00:00Z&endDate=2026-02-19T23:59:59Z&locationIds=1561" \
+      -H "X-API-Key: rfk_your_api_key"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    const response = await fetch(
+      "https://forms-api.rannkly.com/external-api/v1/feedback/nps-overview?" +
+      new URLSearchParams({
+        startDate: "2026-01-01T00:00:00Z",
+        endDate: "2026-02-19T23:59:59Z",
+        locationIds: "1561"
+      }),
+      { headers: { "X-API-Key": process.env.RANNKLY_API_KEY } }
+    );
+    const { data } = await response.json();
+    console.log(`Promoters: ${data.promoter}, Passives: ${data.passive}, Detractors: ${data.detractor}`);
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import requests
+
+    response = requests.get(
+        "https://forms-api.rannkly.com/external-api/v1/feedback/nps-overview",
+        headers={"X-API-Key": "rfk_your_api_key"},
+        params={
+            "startDate": "2026-01-01T00:00:00Z",
+            "endDate": "2026-02-19T23:59:59Z",
+            "locationIds": "1561"
+        }
+    )
+    data = response.json()
+    ```
+  </Tab>
+</Tabs>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  `true` if the request was successful.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  `"NPS overview retrieved successfully"`
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="Data Properties">
+    <ResponseField name="promoter" type="integer">
+      Count of submissions with NPS score 9–10.
+    </ResponseField>
+    <ResponseField name="passive" type="integer">
+      Count of submissions with NPS score 7–8.
+    </ResponseField>
+    <ResponseField name="detractor" type="integer">
+      Count of submissions with NPS score 0–6.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json 200
+{
+  "success": true,
+  "message": "NPS overview retrieved successfully",
+  "data": {
+    "promoter": 10224,
+    "passive": 682,
+    "detractor": 519
+  }
+}
+```
+
+### Empty Response
+
+When no matching NPS submissions are found:
+
+```json 200
+{
+  "success": true,
+  "message": "NPS overview retrieved successfully",
+  "data": {
+    "promoter": 0,
+    "passive": 0,
+    "detractor": 0
+  }
+}
+```
+
+## Error Responses
+
+### Validation Error (400)
+
+```json 400
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    { "field": "startDate", "message": "startDate is required" }
+  ]
+}
+```
+
+### Missing API Key (401)
+
+```json 401
+{
+  "success": false,
+  "message": "API key is required. Provide via X-API-Key header."
+}
+```

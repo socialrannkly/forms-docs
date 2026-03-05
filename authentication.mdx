@@ -1,0 +1,114 @@
+---
+title: "Authentication"
+description: "Learn how to authenticate your API requests using API keys."
+---
+
+## API Key Authentication
+
+All requests to the Rannkly Forms External API must be authenticated using an **API key**. API keys are scoped to your team and grant access to all forms within that team.
+
+### Generating an API Key
+
+1. Log in to your Rannkly Forms dashboard
+2. Navigate to **Settings → General**
+3. Scroll to the **"Forms API Keys"** section
+4. Click **"Generate New Key"**
+5. Enter a descriptive label (e.g., "CRM Integration", "Marketing Automation")
+6. Copy the generated key immediately
+
+<Warning>
+  **API keys are shown only once.** After closing the dialog, the full key cannot be retrieved again. Store it securely in your environment variables or secrets manager.
+</Warning>
+
+### Using Your API Key
+
+Include your API key in every request using one of these methods:
+
+<Tabs>
+  <Tab title="X-API-Key Header (Recommended)">
+    ```bash
+    curl -X GET https://forms-api.rannkly.com/external-api/v1/forms/{formId}/links \
+      -H "X-API-Key: rfk_a1b2c3d4e5f6a7b8c9d0..."
+    ```
+  </Tab>
+  <Tab title="Authorization Bearer">
+    ```bash
+    curl -X GET https://forms-api.rannkly.com/external-api/v1/forms/{formId}/links \
+      -H "Authorization: Bearer rfk_a1b2c3d4e5f6a7b8c9d0..."
+    ```
+  </Tab>
+</Tabs>
+
+### API Key Format
+
+All Rannkly Forms API keys follow this format:
+
+```
+rfk_ + 80 random hexadecimal characters
+```
+
+**Example:** `rfk_a1b2c3d4e5f6a7b8a9b0c1d2e3f4a5b6c7d8e9f0...`
+
+| Property | Value |
+|---|---|
+| **Prefix** | `rfk_` (Rannkly Forms Key) |
+| **Length** | 84 characters total |
+| **Character set** | Lowercase hexadecimal (`0-9`, `a-f`) |
+| **Storage** | SHA-256 hashed — raw key is never stored on our servers |
+
+### Key Management
+
+You can manage your API keys from the dashboard:
+
+| Action | How |
+|---|---|
+| **View keys** | Settings → General → Forms API Keys |
+| **See prefix** | Each key shows its first 12 characters (e.g., `rfk_a1b2c3d4`) |
+| **Revoke** | Click the "Revoke" button next to any active key |
+| **Last used** | Dashboard shows when each key was last used |
+
+<Note>
+  Revoking an API key **immediately** invalidates it. Any integrations using that key will stop working.
+</Note>
+
+### Authentication Errors
+
+| Status Code | Error | Description |
+|---|---|---|
+| `401` | API key is required | No `X-API-Key` header or `Authorization: Bearer` token provided |
+| `401` | Invalid or expired API key | The key doesn't exist, has been revoked, or has expired |
+| `500` | Authentication failed | Internal error during authentication |
+
+**Example error response:**
+
+```json
+{
+  "success": false,
+  "message": "Invalid or expired API key."
+}
+```
+
+### Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Store keys in environment variables">
+    Never hardcode API keys in your source code. Use environment variables or a secrets manager.
+
+    ```bash
+    export RANNKLY_FORMS_API_KEY="rfk_your_key_here"
+    ```
+
+    ```javascript
+    const apiKey = process.env.RANNKLY_FORMS_API_KEY;
+    ```
+  </Accordion>
+  <Accordion title="Use separate keys per integration">
+    Generate a separate API key for each integration (CRM, marketing tool, etc.). This way, revoking one key doesn't affect others.
+  </Accordion>
+  <Accordion title="Rotate keys regularly">
+    Generate a new key, update your integration, then revoke the old key.
+  </Accordion>
+  <Accordion title="Monitor key usage">
+    Check the "Last Used" timestamp in the dashboard to detect unauthorized usage.
+  </Accordion>
+</AccordionGroup>

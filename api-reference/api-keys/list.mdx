@@ -1,0 +1,89 @@
+---
+title: "List API Keys"
+api: "GET /api/settings/form-api-keys"
+description: "Retrieve all API keys for your team with their status and metadata."
+---
+
+<Note>
+  This endpoint requires **session authentication** (logged-in dashboard user) with the `system.manageIntegrations` permission.
+</Note>
+
+## Request
+
+### Headers
+
+| Header | Value | Required |
+|---|---|---|
+| `Cookie` / `Authorization` | Session token | Yes |
+
+### Example Request
+
+```bash
+curl -X GET https://forms-api.rannkly.com/api/settings/form-api-keys \
+  -H "Authorization: Bearer <session_token>"
+```
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Always `true` on success.
+</ResponseField>
+
+<ResponseField name="data.keys" type="array">
+  Array of API key objects, sorted by creation date (newest first).
+
+  <Expandable title="API Key Object">
+    <ResponseField name="id" type="string">
+      Unique identifier of the API key.
+    </ResponseField>
+    <ResponseField name="keyPrefix" type="string">
+      First 12 characters of the key (e.g., `rfk_a1b2c3d4`). The full key is never returned after creation.
+    </ResponseField>
+    <ResponseField name="label" type="string">
+      Descriptive label for the key.
+    </ResponseField>
+    <ResponseField name="isActive" type="boolean">
+      Whether the key is currently active. `false` if revoked.
+    </ResponseField>
+    <ResponseField name="lastUsedAt" type="string | null">
+      ISO 8601 timestamp of last usage, or `null` if never used.
+    </ResponseField>
+    <ResponseField name="expiresAt" type="string | null">
+      ISO 8601 expiration timestamp, or `null` if no expiry set.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 creation timestamp.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json 200
+{
+  "success": true,
+  "message": "API keys retrieved successfully",
+  "data": {
+    "keys": [
+      {
+        "id": "665a1b2c3d4e5f6a7b8c9d0e",
+        "keyPrefix": "rfk_a1b2c3d4",
+        "label": "CRM Integration Key",
+        "isActive": true,
+        "lastUsedAt": "2026-02-07T14:22:00.000Z",
+        "expiresAt": null,
+        "createdAt": "2026-02-07T10:30:00.000Z"
+      },
+      {
+        "id": "665a1b2c3d4e5f6a7b8c9d0f",
+        "keyPrefix": "rfk_e5f6a7b8",
+        "label": "Marketing Automation",
+        "isActive": false,
+        "lastUsedAt": "2026-01-15T08:00:00.000Z",
+        "expiresAt": null,
+        "createdAt": "2026-01-10T09:00:00.000Z"
+      }
+    ]
+  }
+}
+```

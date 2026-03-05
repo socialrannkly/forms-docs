@@ -1,0 +1,195 @@
+---
+title: "Rating Trend"
+api: "GET /external-api/v1/feedback/rating-trend"
+description: "Get rating breakdown over time, grouped by dynamic time intervals based on the date range."
+---
+
+This endpoint returns the volume of responses and their rating breakdown (1-5 stars) over time. The grouping interval is automatically determined by the span between `startDate` and `endDate`:
+
+| Date Range Span | Grouping | Label Example |
+|---|---|---|
+| ≤ 1 day | Hour | `"14:00"` |
+| ≤ 1 week | Day of week | `"Monday"` |
+| ≤ 1 month | Date | `"10 Jan"` |
+| > 2 years | Year | `"2024"` |
+| Default | Month + Year | `"Jan 2024"` |
+
+<Note>
+  Ratings are always normalized to a **1-5 scale** regardless of the original question type. NPS (0-10) and opinion scale (1-10) values are mapped proportionally to the 1-5 range before averaging.
+</Note>
+
+## Request
+
+### Headers
+
+| Header | Value | Required |
+|---|---|---|
+| `X-API-Key` | Your API key (`rfk_...`) | Yes |
+| `X-Team-Id` | Numeric team ID (required for global API keys) | Conditional |
+
+### Query Parameters
+
+<ParamField query="startDate" type="string" required>
+  Start of the date range. Must be a valid ISO 8601 datetime string.
+
+  **Example:** `2026-01-01T00:00:00.000Z`
+</ParamField>
+
+<ParamField query="endDate" type="string" required>
+  End of the date range. Must be a valid ISO 8601 datetime string. Must be after `startDate`.
+
+  **Example:** `2026-02-19T23:59:59.999Z`
+</ParamField>
+
+<ParamField query="formIds" type="string">
+  Comma-separated list of form IDs (MongoDB ObjectIds) to filter by. If omitted, includes all forms accessible to your API key.
+
+  **Example:** `665a1b2c3d4e5f6a7b8c9d0e,665a1b2c3d4e5f6a7b8c9d0f`
+</ParamField>
+
+<ParamField query="locationIds" type="string">
+  Comma-separated list of location IDs (numeric) to filter by. Only forms assigned to these locations will be included.
+
+  **Example:** `1561,1562`
+</ParamField>
+
+### Example Request
+
+<Tabs>
+  <Tab title="cURL">
+    ```bash
+    curl -X GET "https://forms-api.rannkly.com/external-api/v1/feedback/rating-trend?startDate=2026-02-01T00:00:00Z&endDate=2026-02-19T23:59:59Z&locationIds=1561,1562" \
+      -H "X-API-Key: rfk_your_api_key"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    const response = await fetch(
+      "https://forms-api.rannkly.com/external-api/v1/feedback/rating-trend?" +
+      new URLSearchParams({
+        startDate: "2026-02-01T00:00:00Z",
+        endDate: "2026-02-19T23:59:59Z",
+        locationIds: "1561,1562"
+      }),
+      { headers: { "X-API-Key": process.env.RANNKLY_API_KEY } }
+    );
+    const { data } = await response.json();
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import requests
+
+    response = requests.get(
+        "https://forms-api.rannkly.com/external-api/v1/feedback/rating-trend",
+        headers={"X-API-Key": "rfk_your_api_key"},
+        params={
+            "startDate": "2026-02-01T00:00:00Z",
+            "endDate": "2026-02-19T23:59:59Z",
+            "locationIds": "1561,1562"
+        }
+    )
+    data = response.json()
+    ```
+  </Tab>
+</Tabs>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  `true` if the request was successful.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  `"Rating trend retrieved successfully"`
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="Data Properties">
+    <ResponseField name="response" type="array">
+      Array of time-slot objects, sorted chronologically.
+
+      <Expandable title="Time Slot Object">
+        <ResponseField name="date_time" type="string">
+          The formatted time-slot label. Format depends on the date range span (see table above).
+        </ResponseField>
+        <ResponseField name="total_responses" type="integer">
+          Total number of responses in this time slot.
+        </ResponseField>
+        <ResponseField name="ratings" type="object">
+          Rating breakdown keyed by star value (`"1"` through `"5"`). Only ratings with responses are included.
+
+          <Expandable title="Rating Entry">
+            <ResponseField name="count" type="integer">
+              Number of responses with this rating.
+            </ResponseField>
+            <ResponseField name="percent" type="number">
+              Percentage of total responses in this time slot (rounded to 1 decimal).
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json 200
+{
+  "success": true,
+  "message": "Rating trend retrieved successfully",
+  "data": {
+    "response": [
+      {
+        "date_time": "09:00",
+        "total_responses": 71,
+        "ratings": {
+          "4": { "count": 1, "percent": 1.4 },
+          "5": { "count": 70, "percent": 98.6 }
+        }
+      },
+      {
+        "date_time": "10:00",
+        "total_responses": 34,
+        "ratings": {
+          "5": { "count": 33, "percent": 97.1 },
+          "2": { "count": 1, "percent": 2.9 }
+        }
+      }
+    ]
+  }
+}
+```
+
+## Error Responses
+
+### Validation Error (400)
+
+```json 400
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    { "field": "startDate", "message": "startDate is required" }
+  ]
+}
+```
+
+### Missing API Key (401)
+
+```json 401
+{
+  "success": false,
+  "message": "API key is required. Provide via X-API-Key header."
+}
+```
+
+### Global Key Restricted (403)
+
+```json 403
+{
+  "success": false,
+  "message": "This route is not accessible with the global API key."
+}
+```

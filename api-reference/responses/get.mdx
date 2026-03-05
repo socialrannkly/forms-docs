@@ -1,0 +1,320 @@
+---
+title: "Get Response"
+api: "GET /external-api/v1/forms/{formId}/responses/{responseId}"
+description: "Retrieve the full details of a single form response including all answers, metadata, and device information."
+---
+
+This endpoint returns the complete details of a single form response, including **all** answers, hidden field values, variable values, and device/location metadata. Use this to get the full picture of an individual submission.
+
+## Request
+
+### Headers
+
+| Header | Value | Required |
+|---|---|---|
+| `X-API-Key` | Your API key (`rfk_...`) | Yes |
+| `X-Team-Id` | Numeric team ID (required for global API keys) | Conditional |
+
+### Path Parameters
+
+<ParamField path="formId" type="string" required>
+  The MongoDB ObjectId of the form (24-character hex string).
+
+  **Example:** `665a1b2c3d4e5f6a7b8c9d0e`
+</ParamField>
+
+<ParamField path="responseId" type="string" required>
+  The MongoDB ObjectId of the response (24-character hex string).
+
+  You can obtain response IDs from the [List Responses](/api-reference/responses/list) endpoint.
+
+  **Example:** `667b2c3d4e5f6a7b8c9d1234`
+</ParamField>
+
+### Example Request
+
+<Tabs>
+  <Tab title="cURL">
+    ```bash
+    curl -X GET "https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/responses/667b2c3d4e5f6a7b8c9d1234" \
+      -H "X-API-Key: rfk_your_api_key"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    const response = await fetch(
+      `https://forms-api.rannkly.com/external-api/v1/forms/${formId}/responses/${responseId}`,
+      { headers: { "X-API-Key": process.env.RANNKLY_API_KEY } }
+    );
+    const { data } = await response.json();
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import requests
+
+    response = requests.get(
+        f"https://forms-api.rannkly.com/external-api/v1/forms/{form_id}/responses/{response_id}",
+        headers={"X-API-Key": "rfk_your_api_key"}
+    )
+    data = response.json()
+    ```
+  </Tab>
+</Tabs>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  `true` if the request was successful.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  `"Response retrieved successfully"`
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="Response Detail Properties">
+    <ResponseField name="id" type="string">
+      The unique response ID (24-character hex string).
+    </ResponseField>
+    <ResponseField name="formId" type="string">
+      The form this response belongs to.
+    </ResponseField>
+    <ResponseField name="formSlug" type="string">
+      The URL-friendly slug of the form.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Response status: `completed` or `partial`.
+    </ResponseField>
+    <ResponseField name="isComplete" type="boolean">
+      Whether the respondent completed all required questions.
+    </ResponseField>
+    <ResponseField name="completionPercentage" type="integer">
+      Percentage of the form completed (0-100).
+    </ResponseField>
+    <ResponseField name="respondentEmail" type="string | undefined">
+      Email address of the respondent, if captured.
+    </ResponseField>
+    <ResponseField name="respondentName" type="string | undefined">
+      Name of the respondent, if captured.
+    </ResponseField>
+    <ResponseField name="answers" type="array">
+      All answers for this response.
+
+      <Expandable title="Answer Object">
+        <ResponseField name="questionId" type="string">
+          The question ID this answer belongs to.
+        </ResponseField>
+        <ResponseField name="questionType" type="string">
+          The question type (e.g., `short_text`, `rating`, `email`).
+        </ResponseField>
+        <ResponseField name="questionTitle" type="string">
+          The question title/label.
+        </ResponseField>
+        <ResponseField name="value" type="any">
+          The answer value. Type varies by question type.
+        </ResponseField>
+        <ResponseField name="textValue" type="string | undefined">
+          Plain text representation of the answer, if available.
+        </ResponseField>
+        <ResponseField name="fileUrls" type="string[] | undefined">
+          Array of uploaded file URLs, for file upload questions only.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="hiddenFieldValues" type="object | undefined">
+      Values of hidden fields passed to the form (e.g., via URL parameters or private links).
+    </ResponseField>
+    <ResponseField name="variableValues" type="object | undefined">
+      Variable values computed by conditional logic (scores, calculations, etc.).
+    </ResponseField>
+    <ResponseField name="startedAt" type="string">
+      ISO 8601 timestamp when the respondent started the form.
+    </ResponseField>
+    <ResponseField name="completedAt" type="string | undefined">
+      ISO 8601 timestamp when the response was completed.
+    </ResponseField>
+    <ResponseField name="totalDurationMs" type="integer | undefined">
+      Total time taken in milliseconds from start to completion.
+    </ResponseField>
+    <ResponseField name="deviceInfo" type="object | undefined">
+      Device information about the respondent.
+
+      <Expandable title="Device Info">
+        <ResponseField name="device" type="string | undefined">
+          Device type: `desktop`, `mobile`, or `tablet`.
+        </ResponseField>
+        <ResponseField name="browser" type="string | undefined">
+          Browser name (e.g., `Chrome`, `Safari`, `Firefox`).
+        </ResponseField>
+        <ResponseField name="os" type="string | undefined">
+          Operating system (e.g., `Windows`, `macOS`, `iOS`, `Android`).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="location" type="object | undefined">
+      Geolocation of the respondent based on IP.
+
+      <Expandable title="Location Info">
+        <ResponseField name="country" type="string | undefined">
+          Country name.
+        </ResponseField>
+        <ResponseField name="city" type="string | undefined">
+          City name.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 creation timestamp.
+    </ResponseField>
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 last updated timestamp.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json 200
+{
+  "success": true,
+  "message": "Response retrieved successfully",
+  "data": {
+    "id": "667b2c3d4e5f6a7b8c9d1234",
+    "formId": "665a1b2c3d4e5f6a7b8c9d0e",
+    "formSlug": "customer-feedback",
+    "status": "completed",
+    "isComplete": true,
+    "completionPercentage": 100,
+    "respondentEmail": "john@example.com",
+    "respondentName": "John Doe",
+    "answers": [
+      {
+        "questionId": "q_name",
+        "questionType": "short_text",
+        "questionTitle": "What is your name?",
+        "value": "John Doe",
+        "textValue": "John Doe"
+      },
+      {
+        "questionId": "q_email",
+        "questionType": "email",
+        "questionTitle": "Your email address",
+        "value": "john@example.com",
+        "textValue": "john@example.com"
+      },
+      {
+        "questionId": "q_rating",
+        "questionType": "rating",
+        "questionTitle": "How would you rate our service?",
+        "value": 5
+      },
+      {
+        "questionId": "q_feedback",
+        "questionType": "long_text",
+        "questionTitle": "Any additional feedback?",
+        "value": "Great experience overall! The team was very helpful.",
+        "textValue": "Great experience overall! The team was very helpful."
+      }
+    ],
+    "hiddenFieldValues": {
+      "source": "email_campaign",
+      "campaign_id": "camp_2026Q1"
+    },
+    "variableValues": {
+      "satisfaction_score": 95,
+      "nps_category": "promoter"
+    },
+    "startedAt": "2026-02-10T08:30:00.000Z",
+    "completedAt": "2026-02-10T08:30:45.000Z",
+    "totalDurationMs": 45000,
+    "deviceInfo": {
+      "device": "desktop",
+      "browser": "Chrome",
+      "os": "macOS"
+    },
+    "location": {
+      "country": "India",
+      "city": "Bangalore"
+    },
+    "createdAt": "2026-02-10T08:30:00.000Z",
+    "updatedAt": "2026-02-10T08:30:45.000Z"
+  }
+}
+```
+
+## Error Responses
+
+### Response Not Found (404)
+
+```json 404
+{
+  "success": false,
+  "message": "Response not found"
+}
+```
+
+### Form Not Found (404)
+
+```json 404
+{
+  "success": false,
+  "message": "Form not found or does not belong to your team"
+}
+```
+
+### Invalid IDs (400)
+
+```json 400
+{
+  "success": false,
+  "message": "Invalid response ID format"
+}
+```
+
+### Missing API Key (401)
+
+```json 401
+{
+  "success": false,
+  "message": "API key is required. Provide via X-API-Key header."
+}
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Display full response details">
+    Fetch complete response data to show in your custom dashboard or CRM.
+
+    ```javascript
+    const res = await fetch(
+      `https://forms-api.rannkly.com/external-api/v1/forms/${formId}/responses/${responseId}`,
+      { headers: { "X-API-Key": apiKey } }
+    );
+    const { data } = await res.json();
+
+    // Access all answers
+    data.answers.forEach(answer => {
+      console.log(`${answer.questionTitle}: ${answer.value}`);
+    });
+
+    // Access hidden fields (e.g., UTM params, campaign IDs)
+    console.log("Source:", data.hiddenFieldValues?.source);
+    ```
+  </Accordion>
+  <Accordion title="Process calculated scores">
+    Read variable values computed by conditional logic for scoring or routing.
+
+    ```javascript
+    const { data } = await res.json();
+
+    const npsScore = data.variableValues?.nps_score;
+    if (npsScore >= 9) {
+      // Route to promoter follow-up
+    } else if (npsScore <= 6) {
+      // Trigger detractor alert
+    }
+    ```
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,219 @@
+---
+title: "Top Categories Trend (with Sentiment)"
+api: "GET /external-api/v1/feedback/top-categories-trend"
+description: "Get sentiment breakdown for the most frequently mentioned feedback analysis categories."
+---
+
+This endpoint unwinds AI-generated categories from each submission, groups by category and sentiment, and returns the top categories ordered by total mention count. Only submissions with completed AI analysis are included.
+
+By default, results are limited to the **top 10 categories** — pass `allCategories=true` to return all.
+
+## Request
+
+### Headers
+
+| Header | Value | Required |
+|---|---|---|
+| `X-API-Key` | Your API key (`rfk_...`) | Yes |
+| `X-Team-Id` | Numeric team ID (required for global API keys) | Conditional |
+
+### Query Parameters
+
+<ParamField query="startDate" type="string" required>
+  Start of the date range. Must be a valid ISO 8601 datetime string.
+
+  **Example:** `2026-01-01T00:00:00.000Z`
+</ParamField>
+
+<ParamField query="endDate" type="string" required>
+  End of the date range. Must be a valid ISO 8601 datetime string. Must be after `startDate`.
+
+  **Example:** `2026-02-19T23:59:59.999Z`
+</ParamField>
+
+<ParamField query="formIds" type="string">
+  Comma-separated list of form IDs (MongoDB ObjectIds) to filter by.
+
+  **Example:** `665a1b2c3d4e5f6a7b8c9d0e,665a1b2c3d4e5f6a7b8c9d0f`
+</ParamField>
+
+<ParamField query="locationIds" type="string">
+  Comma-separated list of location IDs (numeric) to filter by.
+
+  **Example:** `1561,1562`
+</ParamField>
+
+<ParamField query="categories" type="string">
+  Comma-separated list of specific category names to filter to (case-insensitive).
+
+  **Example:** `service,cleanliness,food`
+</ParamField>
+
+<ParamField query="allCategories" type="string">
+  Set to `true` to return all categories instead of the default top 10.
+
+  **Default:** `false`
+</ParamField>
+
+### Example Request
+
+<Tabs>
+  <Tab title="cURL">
+    ```bash
+    curl -X GET "https://forms-api.rannkly.com/external-api/v1/feedback/top-categories-trend?startDate=2026-01-01T00:00:00Z&endDate=2026-02-19T23:59:59Z&locationIds=1561" \
+      -H "X-API-Key: rfk_your_api_key"
+    ```
+  </Tab>
+  <Tab title="cURL (filtered categories)">
+    ```bash
+    curl -X GET "https://forms-api.rannkly.com/external-api/v1/feedback/top-categories-trend?startDate=2026-01-01T00:00:00Z&endDate=2026-02-19T23:59:59Z&categories=service,cleanliness" \
+      -H "X-API-Key: rfk_your_api_key"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    const response = await fetch(
+      "https://forms-api.rannkly.com/external-api/v1/feedback/top-categories-trend?" +
+      new URLSearchParams({
+        startDate: "2026-01-01T00:00:00Z",
+        endDate: "2026-02-19T23:59:59Z",
+        locationIds: "1561"
+      }),
+      { headers: { "X-API-Key": process.env.RANNKLY_API_KEY } }
+    );
+    const { data } = await response.json();
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import requests
+
+    response = requests.get(
+        "https://forms-api.rannkly.com/external-api/v1/feedback/top-categories-trend",
+        headers={"X-API-Key": "rfk_your_api_key"},
+        params={
+            "startDate": "2026-01-01T00:00:00Z",
+            "endDate": "2026-02-19T23:59:59Z",
+            "locationIds": "1561"
+        }
+    )
+    data = response.json()
+    ```
+  </Tab>
+</Tabs>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  `true` if the request was successful.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  `"Top categories trend retrieved successfully"`
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="Data Properties">
+    <ResponseField name="response" type="array">
+      Array of category items sorted by total_responses descending.
+      <Expandable title="Item Properties">
+        <ResponseField name="category" type="string">
+          Category name (lowercase).
+        </ResponseField>
+        <ResponseField name="total_responses" type="integer">
+          Total number of submissions that mention this category.
+        </ResponseField>
+        <ResponseField name="sentiments" type="object">
+          Sentiment breakdown for this category.
+          <Expandable title="Sentiment Properties">
+            <ResponseField name="positive" type="object">
+              `{ "count": integer, "percent": number }`
+            </ResponseField>
+            <ResponseField name="negative" type="object">
+              `{ "count": integer, "percent": number }`
+            </ResponseField>
+            <ResponseField name="neutral" type="object">
+              `{ "count": integer, "percent": number }`
+            </ResponseField>
+            <ResponseField name="mixed" type="object">
+              `{ "count": integer, "percent": number }`
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="sentiments" type="string[]">
+      Alphabetically sorted list of sentiment labels present in the result.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json 200
+{
+  "success": true,
+  "message": "Top categories trend retrieved successfully",
+  "data": {
+    "response": [
+      {
+        "category": "overall experience",
+        "total_responses": 23851,
+        "sentiments": {
+          "positive": { "count": 21946, "percent": 92 },
+          "negative": { "count": 1257, "percent": 5.3 },
+          "neutral": { "count": 648, "percent": 2.7 },
+          "mixed": { "count": 0, "percent": 0 }
+        }
+      },
+      {
+        "category": "service",
+        "total_responses": 10159,
+        "sentiments": {
+          "positive": { "count": 9248, "percent": 91 },
+          "negative": { "count": 847, "percent": 8.3 },
+          "neutral": { "count": 64, "percent": 0.6 },
+          "mixed": { "count": 0, "percent": 0 }
+        }
+      }
+    ],
+    "sentiments": ["negative", "neutral", "positive"]
+  }
+}
+```
+
+### Empty Response
+
+```json 200
+{
+  "success": true,
+  "message": "Top categories trend retrieved successfully",
+  "data": {
+    "response": [],
+    "sentiments": []
+  }
+}
+```
+
+## Error Responses
+
+### Validation Error (400)
+
+```json 400
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    { "field": "startDate", "message": "startDate is required" }
+  ]
+}
+```
+
+### Missing API Key (401)
+
+```json 401
+{
+  "success": false,
+  "message": "API key is required. Provide via X-API-Key header."
+}
+```

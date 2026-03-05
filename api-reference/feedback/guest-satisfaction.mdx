@@ -1,0 +1,207 @@
+---
+title: "Guest Satisfaction Score"
+api: "GET /external-api/v1/feedback/guest-satisfaction"
+description: "Get a satisfaction category breakdown with counts and percentages based on calculated scores."
+---
+
+This endpoint categorizes each submission's satisfaction level based on its average rating and returns counts and percentages for each category.
+
+### Scoring Logic
+
+1. Calculate a satisfaction score for each response: `ROUND(avgRating × 20)` — maps the 1–5 rating to a 20–100 scale.
+2. Map score to category:
+
+| Score Range | Category |
+|---|---|
+| 80–100 | Very Satisfied |
+| 60–79 | Satisfied |
+| Below 60 | Unsatisfied |
+
+3. Count and calculate percentages for each category.
+
+## Request
+
+### Headers
+
+| Header | Value | Required |
+|---|---|---|
+| `X-API-Key` | Your API key (`rfk_...`) | Yes |
+| `X-Team-Id` | Numeric team ID (required for global API keys) | Conditional |
+
+### Query Parameters
+
+<ParamField query="startDate" type="string" required>
+  Start of the date range. Must be a valid ISO 8601 datetime string.
+
+  **Example:** `2026-01-01T00:00:00.000Z`
+</ParamField>
+
+<ParamField query="endDate" type="string" required>
+  End of the date range. Must be a valid ISO 8601 datetime string. Must be after `startDate`.
+
+  **Example:** `2026-02-19T23:59:59.999Z`
+</ParamField>
+
+<ParamField query="formIds" type="string">
+  Comma-separated list of form IDs (MongoDB ObjectIds) to filter by. If omitted, includes all forms accessible to your API key.
+
+  **Example:** `665a1b2c3d4e5f6a7b8c9d0e,665a1b2c3d4e5f6a7b8c9d0f`
+</ParamField>
+
+<ParamField query="locationIds" type="string">
+  Comma-separated list of location IDs (numeric) to filter by. Only forms assigned to these locations will be included.
+
+  **Example:** `1561,1562`
+</ParamField>
+
+### Example Request
+
+<Tabs>
+  <Tab title="cURL">
+    ```bash
+    curl -X GET "https://forms-api.rannkly.com/external-api/v1/feedback/guest-satisfaction?startDate=2026-01-01T00:00:00Z&endDate=2026-02-19T23:59:59Z&locationIds=1561" \
+      -H "X-API-Key: rfk_your_api_key"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    const response = await fetch(
+      "https://forms-api.rannkly.com/external-api/v1/feedback/guest-satisfaction?" +
+      new URLSearchParams({
+        startDate: "2026-01-01T00:00:00Z",
+        endDate: "2026-02-19T23:59:59Z",
+        locationIds: "1561"
+      }),
+      { headers: { "X-API-Key": process.env.RANNKLY_API_KEY } }
+    );
+    const { data } = await response.json();
+    console.log(`Very Satisfied: ${data.response["very satisfied"]} (${data.satisfaction_percents["very satisfied"]}%)`);
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import requests
+
+    response = requests.get(
+        "https://forms-api.rannkly.com/external-api/v1/feedback/guest-satisfaction",
+        headers={"X-API-Key": "rfk_your_api_key"},
+        params={
+            "startDate": "2026-01-01T00:00:00Z",
+            "endDate": "2026-02-19T23:59:59Z",
+            "locationIds": "1561"
+        }
+    )
+    data = response.json()
+    ```
+  </Tab>
+</Tabs>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  `true` if the request was successful.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  `"Guest satisfaction score retrieved successfully"`
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="Data Properties">
+    <ResponseField name="response" type="object">
+      Count of submissions per satisfaction category.
+      <Expandable title="Response Properties">
+        <ResponseField name="very satisfied" type="integer">
+          Count of submissions with score 80–100 (avgRating ~4–5).
+        </ResponseField>
+        <ResponseField name="satisfied" type="integer">
+          Count of submissions with score 60–79 (avgRating ~3–4).
+        </ResponseField>
+        <ResponseField name="unsatisfied" type="integer">
+          Count of submissions with score below 60 (avgRating below ~3).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="satisfaction_percents" type="object">
+      Percentage of submissions per satisfaction category.
+      <Expandable title="Percentage Properties">
+        <ResponseField name="very satisfied" type="number">
+          Percentage of "very satisfied" submissions (one decimal place).
+        </ResponseField>
+        <ResponseField name="satisfied" type="number">
+          Percentage of "satisfied" submissions (one decimal place).
+        </ResponseField>
+        <ResponseField name="unsatisfied" type="number">
+          Percentage of "unsatisfied" submissions (one decimal place).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json 200
+{
+  "success": true,
+  "message": "Guest satisfaction score retrieved successfully",
+  "data": {
+    "response": {
+      "very satisfied": 10112,
+      "satisfied": 936,
+      "unsatisfied": 377
+    },
+    "satisfaction_percents": {
+      "very satisfied": 88.5,
+      "satisfied": 8.2,
+      "unsatisfied": 3.3
+    }
+  }
+}
+```
+
+### Empty Response
+
+When no matching submissions are found:
+
+```json 200
+{
+  "success": true,
+  "message": "Guest satisfaction score retrieved successfully",
+  "data": {
+    "response": {
+      "very satisfied": 0,
+      "satisfied": 0,
+      "unsatisfied": 0
+    },
+    "satisfaction_percents": {
+      "very satisfied": 0,
+      "satisfied": 0,
+      "unsatisfied": 0
+    }
+  }
+}
+```
+
+## Error Responses
+
+### Validation Error (400)
+
+```json 400
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    { "field": "startDate", "message": "startDate is required" }
+  ]
+}
+```
+
+### Missing API Key (401)
+
+```json 401
+{
+  "success": false,
+  "message": "API key is required. Provide via X-API-Key header."
+}
+```

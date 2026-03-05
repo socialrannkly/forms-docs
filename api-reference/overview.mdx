@@ -1,0 +1,88 @@
+---
+title: "API Overview"
+description: "Explore the Rannkly Forms External API endpoints for managing private form links."
+---
+
+## Base URL
+
+```
+https://forms-api.rannkly.com/external-api/v1
+```
+
+## Endpoints at a Glance
+
+The External API provides two groups of endpoints:
+
+### API Key Management
+
+These endpoints are accessed via the **dashboard session** (not the external API key) and are used to manage API keys from the Settings page.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/settings/form-api-keys` | [Generate a new API key](/api-reference/api-keys/generate) |
+| `GET` | `/api/settings/form-api-keys` | [List all API keys](/api-reference/api-keys/list) |
+| `DELETE` | `/api/settings/form-api-keys/:id` | [Revoke an API key](/api-reference/api-keys/revoke) |
+
+<Note>
+  API Key management endpoints require **session authentication** (logged-in user) with the `system.manageIntegrations` permission. They are **not** accessible via API key.
+</Note>
+
+### Private Form Links
+
+These endpoints are authenticated via **API key** and are the core of the external API.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/external-api/v1/forms/:formId/links` | [Generate a private form link](/api-reference/links/generate) |
+| `GET` | `/external-api/v1/forms/:formId/links` | [List all links for a form](/api-reference/links/list) |
+| `GET` | `/external-api/v1/forms/:formId/links/:linkId` | [Get link details](/api-reference/links/get-detail) |
+| `DELETE` | `/external-api/v1/forms/:formId/links/:linkId` | [Revoke a link](/api-reference/links/revoke) |
+
+## Authentication
+
+<CardGroup cols={2}>
+  <Card title="External API (Links)" icon="link">
+    Uses `X-API-Key` header with an `rfk_...` key.
+
+    ```bash
+    -H "X-API-Key: rfk_your_key"
+    ```
+  </Card>
+  <Card title="Dashboard API (Keys)" icon="gear">
+    Uses session-based authentication from the Rannkly Forms dashboard. Not for external use.
+  </Card>
+</CardGroup>
+
+## Content Type
+
+All `POST` and `PUT` requests must include:
+
+```
+Content-Type: application/json
+```
+
+## Pagination
+
+List endpoints support pagination via query parameters:
+
+| Parameter | Type | Default | Max | Description |
+|---|---|---|---|---|
+| `page` | integer | `1` | — | Page number (1-indexed) |
+| `limit` | integer | `20` | `100` | Items per page |
+
+**Paginated response format:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "links": [...],
+    "pagination": {
+      "total": 47,
+      "page": 1,
+      "limit": 20,
+      "totalPages": 3
+    }
+  }
+}
+```

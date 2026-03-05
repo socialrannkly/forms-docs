@@ -1,0 +1,348 @@
+---
+title: "List Form Responses"
+api: "GET /external-api/v1/forms/{formId}/responses"
+description: "Retrieve paginated form responses with filtering, search, and sorting. Returns submission data scoped to your team."
+---
+
+This endpoint returns a paginated list of form responses (submissions) for a specific form. Results are scoped to the team associated with your API key and exclude spam/test submissions by default.
+
+## Request
+
+### Headers
+
+| Header | Value | Required |
+|---|---|---|
+| `X-API-Key` | Your API key (`rfk_...`) | Yes |
+| `X-Team-Id` | Numeric team ID (required for global API keys) | Conditional |
+
+### Path Parameters
+
+<ParamField path="formId" type="string" required>
+  The MongoDB ObjectId of the form (24-character hex string).
+
+  You can obtain this from the [Get Form by Slug](/api-reference/forms/get-by-slug) endpoint.
+
+  **Example:** `665a1b2c3d4e5f6a7b8c9d0e`
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="page" type="integer" default="1">
+  Page number for pagination. Starts at 1.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="20">
+  Number of responses per page. Minimum 1, maximum 100.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by response status. If omitted, returns both `completed` and `partial` responses.
+
+  **Allowed values:** `completed`, `partial`
+</ParamField>
+
+<ParamField query="search" type="string">
+  Search text to match against respondent email or name (case-insensitive). Maximum 255 characters.
+
+  **Example:** `john@example.com`, `Jane`
+</ParamField>
+
+<ParamField query="startDate" type="string">
+  Filter responses created on or after this date. Must be a valid ISO 8601 datetime string.
+
+  **Example:** `2026-01-01T00:00:00.000Z`
+</ParamField>
+
+<ParamField query="endDate" type="string">
+  Filter responses created on or before this date. Must be a valid ISO 8601 datetime string.
+
+  **Example:** `2026-02-01T23:59:59.999Z`
+</ParamField>
+
+<ParamField query="sortBy" type="string" default="createdAt">
+  Field to sort results by.
+
+  **Allowed values:** `createdAt`, `completedAt`, `completionPercentage`
+</ParamField>
+
+<ParamField query="sortOrder" type="string" default="desc">
+  Sort direction.
+
+  **Allowed values:** `asc`, `desc`
+</ParamField>
+
+### Example Request
+
+<Tabs>
+  <Tab title="cURL">
+    ```bash
+    curl -X GET "https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/responses?page=1&limit=10&status=completed&search=john" \
+      -H "X-API-Key: rfk_your_api_key"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    const response = await fetch(
+      "https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/responses?" +
+      new URLSearchParams({ page: "1", limit: "10", status: "completed" }),
+      { headers: { "X-API-Key": process.env.RANNKLY_API_KEY } }
+    );
+    const { data } = await response.json();
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import requests
+
+    response = requests.get(
+        "https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/responses",
+        headers={"X-API-Key": "rfk_your_api_key"},
+        params={"page": 1, "limit": 10, "status": "completed"}
+    )
+    data = response.json()
+    ```
+  </Tab>
+</Tabs>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  `true` if the request was successful.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  `"Responses retrieved successfully"`
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="Data Properties">
+    <ResponseField name="responses" type="array">
+      Array of response objects.
+
+      <Expandable title="Response Object">
+        <ResponseField name="id" type="string">
+          The unique response ID (24-character hex string).
+        </ResponseField>
+        <ResponseField name="formId" type="string">
+          The form this response belongs to.
+        </ResponseField>
+        <ResponseField name="status" type="string">
+          Response status: `completed` or `partial`.
+        </ResponseField>
+        <ResponseField name="isComplete" type="boolean">
+          Whether the respondent completed all required questions.
+        </ResponseField>
+        <ResponseField name="completionPercentage" type="integer">
+          Percentage of the form completed (0-100).
+        </ResponseField>
+        <ResponseField name="respondentEmail" type="string | undefined">
+          Email address of the respondent, if captured by the form.
+        </ResponseField>
+        <ResponseField name="respondentName" type="string | undefined">
+          Name of the respondent, if captured by the form.
+        </ResponseField>
+        <ResponseField name="answers" type="array">
+          First 5 answers as a preview. Use the [Get Response](/api-reference/responses/get) endpoint for the full answer set.
+
+          <Expandable title="Answer Object">
+            <ResponseField name="questionId" type="string">
+              The question ID this answer belongs to.
+            </ResponseField>
+            <ResponseField name="questionType" type="string">
+              The question type (e.g., `short_text`, `rating`, `email`).
+            </ResponseField>
+            <ResponseField name="questionTitle" type="string">
+              The question title/label.
+            </ResponseField>
+            <ResponseField name="value" type="any">
+              The answer value. Type varies by question type (string, number, array, object).
+            </ResponseField>
+            <ResponseField name="textValue" type="string | undefined">
+              Plain text representation of the answer, if available.
+            </ResponseField>
+            <ResponseField name="fileUrls" type="string[] | undefined">
+              Array of uploaded file URLs, for file upload questions only.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+        <ResponseField name="totalDurationMs" type="integer | undefined">
+          Time taken to complete the form in milliseconds.
+        </ResponseField>
+        <ResponseField name="device" type="string | undefined">
+          Device type used (e.g., `desktop`, `mobile`, `tablet`).
+        </ResponseField>
+        <ResponseField name="country" type="string | undefined">
+          Country of the respondent based on IP geolocation.
+        </ResponseField>
+        <ResponseField name="createdAt" type="string">
+          ISO 8601 timestamp when the response was started.
+        </ResponseField>
+        <ResponseField name="completedAt" type="string | undefined">
+          ISO 8601 timestamp when the response was completed.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="pagination" type="object">
+      Pagination metadata.
+
+      <Expandable title="Pagination Object">
+        <ResponseField name="total" type="integer">
+          Total number of matching responses.
+        </ResponseField>
+        <ResponseField name="page" type="integer">
+          Current page number.
+        </ResponseField>
+        <ResponseField name="limit" type="integer">
+          Number of responses per page.
+        </ResponseField>
+        <ResponseField name="totalPages" type="integer">
+          Total number of pages.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json 200
+{
+  "success": true,
+  "message": "Responses retrieved successfully",
+  "data": {
+    "responses": [
+      {
+        "id": "667b2c3d4e5f6a7b8c9d1234",
+        "formId": "665a1b2c3d4e5f6a7b8c9d0e",
+        "status": "completed",
+        "isComplete": true,
+        "completionPercentage": 100,
+        "respondentEmail": "john@example.com",
+        "respondentName": "John Doe",
+        "answers": [
+          {
+            "questionId": "q_name",
+            "questionType": "short_text",
+            "questionTitle": "What is your name?",
+            "value": "John Doe",
+            "textValue": "John Doe"
+          },
+          {
+            "questionId": "q_rating",
+            "questionType": "rating",
+            "questionTitle": "How would you rate our service?",
+            "value": 5
+          },
+          {
+            "questionId": "q_feedback",
+            "questionType": "long_text",
+            "questionTitle": "Any additional feedback?",
+            "value": "Great experience overall!",
+            "textValue": "Great experience overall!"
+          }
+        ],
+        "totalDurationMs": 45000,
+        "device": "desktop",
+        "country": "India",
+        "createdAt": "2026-02-10T08:30:00.000Z",
+        "completedAt": "2026-02-10T08:30:45.000Z"
+      }
+    ],
+    "pagination": {
+      "total": 128,
+      "page": 1,
+      "limit": 10,
+      "totalPages": 13
+    }
+  }
+}
+```
+
+## Error Responses
+
+### Form Not Found (404)
+
+```json 404
+{
+  "success": false,
+  "message": "Form not found or does not belong to your team"
+}
+```
+
+### Invalid Form ID (400)
+
+```json 400
+{
+  "success": false,
+  "message": "Invalid form ID format"
+}
+```
+
+### Validation Error (400)
+
+```json 400
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    { "field": "startDate", "message": "Invalid ISO 8601 date" }
+  ]
+}
+```
+
+### Missing API Key (401)
+
+```json 401
+{
+  "success": false,
+  "message": "API key is required. Provide via X-API-Key header."
+}
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Export responses to a spreadsheet">
+    Paginate through all responses and export them to CSV or Google Sheets.
+
+    ```javascript
+    let page = 1;
+    let allResponses = [];
+
+    while (true) {
+      const res = await fetch(
+        `https://forms-api.rannkly.com/external-api/v1/forms/${formId}/responses?page=${page}&limit=100&status=completed`,
+        { headers: { "X-API-Key": apiKey } }
+      );
+      const { data } = await res.json();
+      allResponses.push(...data.responses);
+
+      if (page >= data.pagination.totalPages) break;
+      page++;
+    }
+    ```
+  </Accordion>
+  <Accordion title="Build a real-time dashboard">
+    Poll for new responses since your last check using date filters.
+
+    ```javascript
+    const lastChecked = new Date(Date.now() - 60000).toISOString();
+
+    const res = await fetch(
+      `https://forms-api.rannkly.com/external-api/v1/forms/${formId}/responses?` +
+      `startDate=${lastChecked}&sortBy=createdAt&sortOrder=desc`,
+      { headers: { "X-API-Key": apiKey } }
+    );
+    ```
+  </Accordion>
+  <Accordion title="Search for a specific respondent">
+    Find responses by email or name.
+
+    ```javascript
+    const res = await fetch(
+      `https://forms-api.rannkly.com/external-api/v1/forms/${formId}/responses?search=john@example.com`,
+      { headers: { "X-API-Key": apiKey } }
+    );
+    ```
+  </Accordion>
+</AccordionGroup>

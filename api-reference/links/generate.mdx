@@ -1,0 +1,648 @@
+---
+title: "Generate Private Link"
+api: "POST /external-api/v1/forms/{formId}/links"
+description: "Generate a private form link with optional customer data, prefill values, and access controls."
+---
+
+This is the primary endpoint of the Rannkly Forms API. It creates a unique, tokenized link to a **private form** that can be shared with a specific customer.
+
+## Request
+
+### Headers
+
+| Header | Value | Required |
+|---|---|---|
+| `X-API-Key` | Your API key (`rfk_...`) | Yes |
+| `X-Team-Id` | Numeric team ID (required for global API keys) | Conditional |
+| `Content-Type` | `application/json` | Yes |
+
+### Path Parameters
+
+<ParamField path="formId" type="string" required>
+  The MongoDB ObjectId of the form. Must be a 24-character hex string.
+
+  You can find this in the form URL in your dashboard: `https://forms.rannkly.com/forms/{formId}/edit`
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="customer" type="object">
+  Customer information to attach to this link. If an email is provided, an existing contact with the same email will be updated; otherwise, a new contact is created.
+
+  <Expandable title="Customer Properties">
+    <ParamField body="email" type="string">
+      Customer email address. Used as the unique identifier to find/update existing contacts.
+    </ParamField>
+    <ParamField body="name" type="string">
+      Customer full name. Max 255 characters.
+    </ParamField>
+    <ParamField body="phone" type="string">
+      Customer phone number. Max 50 characters.
+    </ParamField>
+    <ParamField body="companyName" type="string">
+      Customer company name. Max 255 characters.
+    </ParamField>
+    <ParamField body="properties" type="array">
+      Custom key-value properties to store on the contact.
+
+      ```json
+      [
+        { "key": "department", "value": "Engineering" },
+        { "key": "plan", "value": "Enterprise" }
+      ]
+      ```
+
+      - `key`: 1–100 characters
+      - `value`: up to 1,000 characters
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="prefillData" type="object">
+  Key-value pairs to prefill form fields when the link is opened. Keys should match your form's question IDs (e.g., `q-1770634598292`).
+
+  You can find question IDs using the [Get Form by Slug](/api-reference/forms/get-by-slug) endpoint.
+
+  For simple questions, the value is a string. For composite questions like `contact_info`, the value is an object with sub-field keys:
+
+  ```json
+  {
+    "q-1770634598292": "12345",
+    "q-1770634652323": "John",
+    "q-1770634793939": "john@example.com",
+    "q-1770635000000": {
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "john@example.com",
+      "phoneNumber": "555-0123"
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField body="settings" type="object">
+  Per-link overrides for form behavior. These settings are stored on the link token and also applied globally to the form.
+
+  <Expandable title="Settings Properties">
+    <ParamField body="prefillEditable" type="boolean" default="true">
+      Global default that controls whether **all** prefilled fields can be edited by the respondent.
+
+      - `true` (default) — respondent can modify prefilled values
+      - `false` — all prefilled fields are locked as read-only
+
+      Use this when you want a single rule for every prefilled field. To control editability on a per-question basis, use `prefillEditableOverrides` instead.
+    </ParamField>
+    <ParamField body="prefillEditableOverrides" type="object">
+      Per-question editable overrides. Keys are question IDs (same IDs used in `prefillData`). Each override takes priority over the global `prefillEditable` setting for that specific question.
+
+      **Value types:**
+      - **`boolean`** — controls the entire question (e.g., `"q-123": false` makes the question read-only)
+      - **`object`** — controls individual sub-fields of composite questions like `contact_info` (e.g., `"q-456": { "email": false, "firstName": true }`)
+
+      ```json
+      {
+        "q-1770634598292": false,
+        "q-1770634652323": true,
+        "q-1770634793939": {
+          "email": false,
+          "firstName": true,
+          "phoneNumber": false
+        }
+      }
+      ```
+
+      <Info>
+        **Priority chain (highest to lowest):**
+        1. Per-field override (e.g., `"email": false` inside a composite question)
+        2. Per-question override (e.g., `"q-123": false`)
+        3. Global `prefillEditable` setting
+
+        Fields not listed in `prefillEditableOverrides` inherit the global `prefillEditable` value.
+      </Info>
+    </ParamField>
+    <ParamField body="cooldown" type="object">
+      Cooldown configuration that controls what happens when a respondent tries to access the form again after submitting.
+
+      The cooldown settings are applied **both** globally to the form (affecting all accesses) **and** stored on the link token (for per-link override awareness).
+
+      <Expandable title="Cooldown Properties">
+        <ParamField body="enabled" type="boolean" required>
+          Enable or disable cooldown for the form.
+        </ParamField>
+        <ParamField body="duration" type="integer">
+          Cooldown duration value. Must be a positive integer. Defaults to `24` if not specified.
+        </ParamField>
+        <ParamField body="durationUnit" type="string">
+          Unit of the cooldown duration. One of: `minutes`, `hours`, `days`. Defaults to `hours`.
+        </ParamField>
+        <ParamField body="action" type="string">
+          What happens when a user tries to access the form during cooldown. One of:
+
+          - `block` — completely block the submission (default)
+          - `edit_only` — allow editing the previous submission; the form is prefilled with the respondent's previous answers
+          - `view_only` — show the form as read-only with previous answers
+        </ParamField>
+      </Expandable>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="expiresAt" type="string">
+  ISO 8601 datetime string with timezone offset. The link will stop working after this time.
+
+  **Example:** `"2026-03-01T00:00:00Z"` or `"2026-03-01T05:30:00+05:30"`
+
+  <Warning>
+    The date must include a timezone offset (e.g., `Z` or `+05:30`). Plain dates like `"2026-03-01"` will fail validation.
+  </Warning>
+</ParamField>
+
+<ParamField body="maxUsages" type="integer">
+  Maximum number of times the link can be used to **submit** the form. Must be a positive integer.
+
+  Once this limit is reached, the link becomes inactive and any attempt to open it will return an "Invalid or expired access token" error.
+
+  <Note>
+    `maxUsages` counts form **submissions**, not page views. The respondent can open and view the form multiple times without consuming a usage. A usage is only counted when the form is successfully submitted.
+  </Note>
+</ParamField>
+
+<ParamField body="label" type="string">
+  An internal label for this link (e.g., "Feedback link for John Doe"). Max 255 characters. Not visible to the form respondent.
+</ParamField>
+
+### Example Requests
+
+<Tabs>
+  <Tab title="Basic Link">
+    ```bash
+    curl -X POST https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
+      -H "X-API-Key: rfk_your_api_key" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "label": "Q1 Feedback - John"
+      }'
+    ```
+  </Tab>
+  <Tab title="With Customer Data">
+    ```bash
+    curl -X POST https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
+      -H "X-API-Key: rfk_your_api_key" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "customer": {
+          "email": "john@example.com",
+          "name": "John Doe",
+          "phone": "+1-555-0123",
+          "companyName": "Acme Corp",
+          "properties": [
+            { "key": "department", "value": "Engineering" },
+            { "key": "tier", "value": "Enterprise" }
+          ]
+        },
+        "label": "Onboarding survey for John Doe"
+      }'
+    ```
+  </Tab>
+  <Tab title="Prefill + Edit Cooldown">
+    Generate a link with prefilled data and an **edit-only cooldown** — the respondent can submit once, then re-open the same link to edit their response within 15 minutes. All prefilled fields remain editable.
+
+    ```bash
+    curl -X POST https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
+      -H "X-API-Key: rfk_your_api_key" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "customer": {
+          "email": "kalra@gmail.com",
+          "name": "Kalra Sharma",
+          "phone": "+91-9312558991"
+        },
+        "prefillData": {
+          "q-1770634598292": "34534",
+          "q-1770634652323": "Kalra",
+          "q-1770634793939": "kalra@gmail.com",
+          "q-1770634813892": "9312558991"
+        },
+        "settings": {
+          "prefillEditable": true,
+          "cooldown": {
+            "enabled": true,
+            "duration": 15,
+            "durationUnit": "minutes",
+            "action": "edit_only"
+          }
+        },
+        "maxUsages": 12,
+        "label": "Prefilled link for Kalra Sharma"
+      }'
+    ```
+  </Tab>
+  <Tab title="Prefill Read-only">
+    Prefill all fields as **read-only** so the respondent can see the data but cannot change it. Useful when you want to show context (e.g., order ID, email) without allowing edits.
+
+    ```bash
+    curl -X POST https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
+      -H "X-API-Key: rfk_your_api_key" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "customer": {
+          "email": "jane@example.com",
+          "name": "Jane Smith"
+        },
+        "prefillData": {
+          "q-1770634652323": "Jane",
+          "q-1770634793939": "jane@example.com"
+        },
+        "settings": {
+          "prefillEditable": false
+        },
+        "label": "Read-only prefill for Jane Smith"
+      }'
+    ```
+  </Tab>
+  <Tab title="Per-Question Editable">
+    Prefill multiple fields but make **some read-only and others editable**. Here the order ID and email are locked, while the name and phone remain editable.
+
+    ```bash
+    curl -X POST https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
+      -H "X-API-Key: rfk_your_api_key" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "customer": {
+          "email": "kalra@gmail.com",
+          "name": "Kalra Sharma"
+        },
+        "prefillData": {
+          "q-1770634598292": "ORD-98765",
+          "q-1770634652323": "Kalra",
+          "q-1770634793939": "kalra@gmail.com",
+          "q-1770634813892": "9312558991"
+        },
+        "settings": {
+          "prefillEditable": true,
+          "prefillEditableOverrides": {
+            "q-1770634598292": false,
+            "q-1770634793939": false
+          }
+        },
+        "label": "Order feedback - Kalra (ORD-98765)"
+      }'
+    ```
+
+    Here `prefillEditable` is `true` (global default), so name and phone are editable. The overrides make order ID and email read-only.
+  </Tab>
+  <Tab title="Contact Info Sub-fields">
+    Control editability of **individual sub-fields** inside a `contact_info` question. Here the email is locked but the name and phone remain editable.
+
+    ```bash
+    curl -X POST https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
+      -H "X-API-Key: rfk_your_api_key" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "customer": {
+          "email": "jane@example.com",
+          "name": "Jane Smith"
+        },
+        "prefillData": {
+          "q-1770634652323": {
+            "firstName": "Jane",
+            "lastName": "Smith",
+            "email": "jane@example.com",
+            "phoneNumber": "555-0123"
+          }
+        },
+        "settings": {
+          "prefillEditable": true,
+          "prefillEditableOverrides": {
+            "q-1770634652323": {
+              "email": false,
+              "firstName": true,
+              "lastName": true,
+              "phoneNumber": true
+            }
+          }
+        },
+        "label": "Survey for Jane Smith"
+      }'
+    ```
+  </Tab>
+  <Tab title="Block Cooldown + Expiry">
+    Generate a **one-time link** that blocks resubmission for 24 hours and expires on a specific date. Prefilled fields are read-only.
+
+    ```bash
+    curl -X POST https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
+      -H "X-API-Key: rfk_your_api_key" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "customer": {
+          "email": "jane@example.com",
+          "name": "Jane Smith"
+        },
+        "prefillData": {
+          "q-1770634652323": "Jane",
+          "q-1770634793939": "jane@example.com"
+        },
+        "settings": {
+          "prefillEditable": false,
+          "cooldown": {
+            "enabled": true,
+            "duration": 24,
+            "durationUnit": "hours",
+            "action": "block"
+          }
+        },
+        "expiresAt": "2026-03-15T23:59:59Z",
+        "maxUsages": 1,
+        "label": "NPS Survey - Jane Smith"
+      }'
+    ```
+  </Tab>
+  <Tab title="Node.js">
+    ```javascript
+    const response = await fetch(
+      "https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links",
+      {
+        method: "POST",
+        headers: {
+          "X-API-Key": process.env.RANNKLY_FORMS_API_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customer: {
+            email: "john@example.com",
+            name: "John Doe",
+          },
+          prefillData: {
+            "q-1770634598292": "ORD-12345",
+            "q-1770634652323": "John",
+            "q-1770634793939": "john@example.com",
+          },
+          settings: {
+            prefillEditable: true,
+            prefillEditableOverrides: {
+              "q-1770634598292": false, // Order ID is read-only
+              "q-1770634793939": false, // Email is read-only
+            },
+            cooldown: {
+              enabled: true,
+              duration: 15,
+              durationUnit: "minutes",
+              action: "edit_only",
+            },
+          },
+          maxUsages: 5,
+          label: "Feedback form for John",
+        }),
+      },
+    );
+
+    const data = await response.json();
+    console.log(data.data.url); // The private form URL to share
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import requests
+    import os
+
+    response = requests.post(
+        "https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links",
+        headers={
+            "X-API-Key": os.environ["RANNKLY_FORMS_API_KEY"],
+            "Content-Type": "application/json",
+        },
+        json={
+            "customer": {
+                "email": "john@example.com",
+                "name": "John Doe",
+            },
+            "prefillData": {
+                "q-1770634598292": "ORD-12345",
+                "q-1770634652323": "John",
+                "q-1770634793939": "john@example.com",
+            },
+            "settings": {
+                "prefillEditable": True,
+                "prefillEditableOverrides": {
+                    "q-1770634598292": False,  # Order ID is read-only
+                    "q-1770634793939": False,  # Email is read-only
+                },
+                "cooldown": {
+                    "enabled": True,
+                    "duration": 15,
+                    "durationUnit": "minutes",
+                    "action": "edit_only",
+                },
+            },
+            "maxUsages": 5,
+            "label": "Feedback form for John",
+        },
+    )
+
+    data = response.json()
+    print(data["data"]["url"])  # The private form URL to share
+    ```
+  </Tab>
+</Tabs>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Always `true` on success.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  `"Private form link generated successfully"`
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="properties">
+    <ResponseField name="linkId" type="string">
+      Unique identifier of the generated link record.
+    </ResponseField>
+    <ResponseField name="url" type="string">
+      The private form URL (relative path with token). Contains the form slug and token.
+
+      **Format:** `/f/{slug}?token=tkn_...`
+    </ResponseField>
+    <ResponseField name="complete_url" type="string">
+      The fully-qualified private form URL including the base domain. Use this to share directly with customers.
+
+      **Format:** `https://forms.rannkly.com/f/{slug}?token=tkn_...`
+    </ResponseField>
+    <ResponseField name="token" type="string">
+      The raw access token embedded in the URL. Starts with `tkn_`.
+    </ResponseField>
+    <ResponseField name="contactId" type="string | undefined">
+      The MongoDB ObjectId of the created/updated contact. Only present if `customer` data was provided.
+    </ResponseField>
+    <ResponseField name="expiresAt" type="string | undefined">
+      ISO 8601 expiration timestamp. Only present if `expiresAt` was provided.
+    </ResponseField>
+    <ResponseField name="maxUsages" type="integer | undefined">
+      Maximum submission count. Only present if `maxUsages` was provided.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of when the link was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json 201
+{
+  "success": true,
+  "message": "Private form link generated successfully",
+  "data": {
+    "linkId": "665a1b2c3d4e5f6a7b8c9d0e",
+    "url": "/f/customer-feedback?token=tkn_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1",
+    "complete_url": "https://forms.rannkly.com/f/customer-feedback?token=tkn_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1",
+    "token": "tkn_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1",
+    "contactId": "665a1b2c3d4e5f6a7b8c9d0f",
+    "expiresAt": "2026-03-15T23:59:59.000Z",
+    "maxUsages": 1,
+    "createdAt": "2026-02-07T10:30:00.000Z"
+  }
+}
+```
+
+## How It Works
+
+<Steps>
+  <Step title="Validates form ownership">
+    The API verifies that the form exists, belongs to your team, and hasn't been deleted.
+  </Step>
+  <Step title="Applies form settings (if provided)">
+    If `cooldown` or `prefillEditable` are provided inside `settings`, the form's global settings are updated **and** the overrides are stored on the link token for per-link awareness. Per-question overrides (`prefillEditableOverrides`) are stored exclusively on the link token and do not modify the global form settings.
+  </Step>
+  <Step title="Creates or updates the contact">
+    If `customer` data is provided, the API looks up an existing contact by email (within your team). If found, the contact is updated; otherwise, a new contact is created with `source: "api"`.
+  </Step>
+  <Step title="Generates a secure token">
+    A cryptographically random token (`tkn_` + 64 hex characters) is generated and stored in the database along with the prefill data, editable overrides, cooldown settings, and form configuration.
+  </Step>
+  <Step title="Returns the private URL">
+    The form URL is constructed as `{baseUrl}/f/{slug}?token={token}` and returned to you.
+  </Step>
+</Steps>
+
+## Prefill Editable Behavior
+
+When `prefillData` is provided, the editable state of each prefilled field is determined by the following priority chain:
+
+| Priority | Source | Scope | Example |
+|---|---|---|---|
+| 1 (highest) | `prefillEditableOverrides` with field-level object | Individual sub-field of a composite question | `{ "q-123": { "email": false } }` |
+| 2 | `prefillEditableOverrides` with boolean | Entire question | `{ "q-123": false }` |
+| 3 (lowest) | `prefillEditable` | All prefilled fields | `true` or `false` |
+
+<AccordionGroup>
+  <Accordion title="All prefilled fields editable (default)">
+    Don't pass `settings` at all, or set `prefillEditable` to `true`. The respondent can modify every prefilled value.
+
+    ```json
+    {
+      "prefillData": { "q-name": "John", "q-email": "john@example.com" },
+      "settings": { "prefillEditable": true }
+    }
+    ```
+  </Accordion>
+  <Accordion title="All prefilled fields read-only">
+    Set `prefillEditable` to `false`. Every prefilled field is locked.
+
+    ```json
+    {
+      "prefillData": { "q-name": "John", "q-email": "john@example.com" },
+      "settings": { "prefillEditable": false }
+    }
+    ```
+  </Accordion>
+  <Accordion title="Mixed: some read-only, some editable">
+    Set `prefillEditable` to the default you want for most fields, then override specific questions via `prefillEditableOverrides`.
+
+    ```json
+    {
+      "prefillData": {
+        "q-order-id": "ORD-98765",
+        "q-name": "John",
+        "q-email": "john@example.com"
+      },
+      "settings": {
+        "prefillEditable": true,
+        "prefillEditableOverrides": {
+          "q-order-id": false,
+          "q-email": false
+        }
+      }
+    }
+    ```
+
+    Result: order ID and email are read-only; name is editable.
+  </Accordion>
+  <Accordion title="Composite question: per-sub-field control">
+    For `contact_info` questions, pass an object to control each sub-field individually.
+
+    ```json
+    {
+      "prefillData": {
+        "q-contact": {
+          "firstName": "Jane",
+          "email": "jane@example.com",
+          "phoneNumber": "555-0123"
+        }
+      },
+      "settings": {
+        "prefillEditable": true,
+        "prefillEditableOverrides": {
+          "q-contact": {
+            "email": false,
+            "firstName": true,
+            "phoneNumber": true
+          }
+        }
+      }
+    }
+    ```
+
+    Result: email is read-only; first name and phone are editable.
+  </Accordion>
+</AccordionGroup>
+
+## Cooldown Behavior
+
+When cooldown is enabled, here's what happens during the respondent's interaction:
+
+<Steps>
+  <Step title="First visit">
+    The respondent opens the link, sees the form (with prefilled data if provided), and submits their response. This counts as one usage toward `maxUsages`.
+  </Step>
+  <Step title="Re-opens the link during cooldown">
+    Depending on the `action` setting:
+
+    - **`block`** — The form submission is rejected with a cooldown message showing remaining time.
+    - **`edit_only`** — The form loads in **edit mode** with an "Editing your previous response" banner. The respondent's previous answers are prefilled and they can modify and resubmit. Each resubmission counts toward `maxUsages`.
+    - **`view_only`** — The form is shown as read-only with the respondent's previous answers. No resubmission is allowed.
+  </Step>
+  <Step title="After cooldown expires">
+    The respondent can submit a fresh response (if `maxUsages` and `expiresAt` allow).
+  </Step>
+</Steps>
+
+<Info>
+  The cooldown identity method defaults to `email` — the system matches the respondent by the email address in their submission. The form must include an email-type question for this to work reliably.
+</Info>
+
+## Access Controls
+
+The link respects three access control mechanisms that work together:
+
+| Control | Description | Checked on |
+|---|---|---|
+| **`expiresAt`** | Link stops working after this datetime | Every page load |
+| **`maxUsages`** | Link stops working after N successful submissions | Every page load |
+| **Cooldown** | Controls resubmission behavior during the cooldown window | On form submission and form load |
+
+<Note>
+  Opening the form link (page view) does **not** count toward `maxUsages`. Only successful form submissions increment the usage counter.
+</Note>

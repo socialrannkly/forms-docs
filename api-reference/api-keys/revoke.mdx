@@ -1,0 +1,69 @@
+---
+title: "Revoke API Key"
+api: "DELETE /api/settings/form-api-keys/{id}"
+description: "Permanently revoke an API key, immediately disabling all integrations using it."
+---
+
+<Note>
+  This endpoint requires **session authentication** (logged-in dashboard user) with the `system.manageIntegrations` permission.
+</Note>
+
+## Request
+
+### Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the API key to revoke.
+</ParamField>
+
+### Headers
+
+| Header | Value | Required |
+|---|---|---|
+| `Cookie` / `Authorization` | Session token | Yes |
+
+### Example Request
+
+```bash
+curl -X DELETE https://forms-api.rannkly.com/api/settings/form-api-keys/665a1b2c3d4e5f6a7b8c9d0e \
+  -H "Authorization: Bearer <session_token>"
+```
+
+## Response
+
+### Success Response
+
+```json 200
+{
+  "success": true,
+  "message": "API key revoked successfully",
+  "data": {}
+}
+```
+
+### Error Responses
+
+<Tabs>
+  <Tab title="404 Not Found">
+    ```json
+    {
+      "success": false,
+      "message": "API key not found or already revoked"
+    }
+    ```
+    The key ID doesn't exist, doesn't belong to your team, or was already revoked.
+  </Tab>
+  <Tab title="400 Bad Request">
+    ```json
+    {
+      "success": false,
+      "message": "API key ID is required"
+    }
+    ```
+    No key ID was provided in the URL path.
+  </Tab>
+</Tabs>
+
+<Warning>
+  Revoking an API key is **immediate and irreversible**. All external integrations using this key will receive `401 Unauthorized` errors immediately after revocation.
+</Warning>

@@ -1,0 +1,147 @@
+---
+title: "Error Handling"
+description: "Understand API error responses, status codes, and how to handle them."
+---
+
+## Response Format
+
+All API responses follow a consistent JSON structure:
+
+<Tabs>
+  <Tab title="Success Response">
+    ```json
+    {
+      "success": true,
+      "message": "Descriptive success message",
+      "data": {
+        // Response payload
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Error Response">
+    ```json
+    {
+      "success": false,
+      "message": "Descriptive error message"
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## HTTP Status Codes
+
+| Code | Meaning | When It's Returned |
+|---|---|---|
+| `200` | **OK** | Request succeeded (GET, DELETE, PUT) |
+| `201` | **Created** | Resource created successfully (POST) |
+| `400` | **Bad Request** | Invalid request body, missing required fields, or validation error |
+| `401` | **Unauthorized** | Missing, invalid, or expired API key |
+| `404` | **Not Found** | Resource doesn't exist or doesn't belong to your team |
+| `500` | **Internal Server Error** | Unexpected server error |
+
+## Common Error Scenarios
+
+### Authentication Errors (401)
+
+```json
+{
+  "success": false,
+  "message": "API key is required. Provide via X-API-Key header."
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "Invalid or expired API key."
+}
+```
+
+### Validation Errors (400)
+
+Returned when the request body doesn't match the expected schema.
+
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    {
+      "field": "customer.email",
+      "message": "Invalid email format"
+    },
+    {
+      "field": "expiresAt",
+      "message": "Invalid datetime string. Must be UTC with timezone offset."
+    }
+  ]
+}
+```
+
+### Not Found Errors (404)
+
+```json
+{
+  "success": false,
+  "message": "Form not found or does not belong to your team"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "Link not found"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "Link not found or already revoked"
+}
+```
+
+## Error Handling Best Practices
+
+<Steps>
+  <Step title="Always check the success field">
+    ```javascript
+    const response = await fetch(url, options);
+    const data = await response.json();
+
+    if (!data.success) {
+      console.error(`API Error: ${data.message}`);
+      // Handle error appropriately
+      return;
+    }
+
+    // Process data.data
+    ```
+  </Step>
+  <Step title="Handle HTTP status codes">
+    ```javascript
+    if (response.status === 401) {
+      // Re-authenticate or check API key
+    } else if (response.status === 404) {
+      // Resource not found — check IDs
+    } else if (response.status >= 500) {
+      // Server error — retry with backoff
+    }
+    ```
+  </Step>
+  <Step title="Implement retry logic for 5xx errors">
+    ```javascript
+    async function apiCallWithRetry(fn, maxRetries = 3) {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          return await fn();
+        } catch (error) {
+          if (attempt === maxRetries || error.status < 500) throw error;
+          await new Promise(r => setTimeout(r, 1000 * attempt)); // Exponential backoff
+        }
+      }
+    }
+    ```
+  </Step>
+</Steps>

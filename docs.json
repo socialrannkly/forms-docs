@@ -1,0 +1,130 @@
+{
+    "$schema": "https://mintlify.com/docs.json",
+    "theme": "mint",
+    "name": "Rannkly Forms API",
+    "colors": {
+        "primary": "#7C3AED",
+        "light": "#A78BFA",
+        "dark": "#5B21B6"
+    },
+    "favicon": "https://formscdn.rannkly.com/assets/images/favicon.ico",
+    "logo": {
+        "dark": "https://formscdn.rannkly.com/assets/images/logo.svg",
+        "light": "https://formscdn.rannkly.com/assets/images/logo.svg"
+    },
+    "navigation": {
+        "tabs": [
+            {
+                "tab": "Getting Started",
+                "groups": [
+                    {
+                        "group": "Introduction",
+                        "pages": [
+                            "introduction",
+                            "authentication",
+                            "errors"
+                        ]
+                    }
+                ]
+            },
+            {
+                "tab": "API Reference",
+                "groups": [
+                    {
+                        "group": "Overview",
+                        "pages": [
+                            "api-reference/overview"
+                        ]
+                    },
+                    {
+                        "group": "API Keys",
+                        "pages": [
+                            "api-reference/api-keys/generate",
+                            "api-reference/api-keys/list",
+                            "api-reference/api-keys/revoke"
+                        ]
+                    },
+                    {
+                        "group": "Forms",
+                        "pages": [
+                            "api-reference/forms/get-by-slug"
+                        ]
+                    },
+                    {
+                        "group": "Form Responses",
+                        "pages": [
+                            "api-reference/responses/all",
+                            "api-reference/responses/list",
+                            "api-reference/responses/get"
+                        ]
+                    },
+                    {
+                        "group": "Private Form Links",
+                        "pages": [
+                            "api-reference/links/generate",
+                            "api-reference/links/list",
+                            "api-reference/links/get-detail",
+                            "api-reference/links/revoke"
+                        ]
+                    },
+                    {
+                        "group": "Feedback Widgets",
+                        "pages": [
+                            "api-reference/feedback/rating-trend",
+                            "api-reference/feedback/rating-overview",
+                            "api-reference/feedback/overall-summary",
+                            "api-reference/feedback/nps-overview",
+                            "api-reference/feedback/sentiment-overview",
+                            "api-reference/feedback/guest-satisfaction",
+                            "api-reference/feedback/top-categories",
+                            "api-reference/feedback/response-categories",
+                            "api-reference/feedback/overall-trend",
+                            "api-reference/feedback/nps-trend",
+                            "api-reference/feedback/sentiment-trend",
+                            "api-reference/feedback/satisfaction-trend",
+                            "api-reference/feedback/top-categories-trend",
+                            "api-reference/feedback/department-nps",
+                            "api-reference/feedback/department-score-heatmap",
+                            "api-reference/feedback/departments"
+                        ]
+                    }
+                ]
+            }
+        ],
+        "global": {
+            "anchors": [
+                {
+                    "anchor": "Changelog",
+                    "href": "https://forms.rannkly.com/changelog",
+                    "icon": "list"
+                }
+            ]
+        }
+    },
+    "navbar": {
+        "links": [
+            {
+                "label": "Support",
+                "href": "mailto:support@rannkly.com"
+            }
+        ],
+        "primary": {
+            "type": "button",
+            "label": "Dashboard",
+            "href": "https://forms.rannkly.com"
+        }
+    },
+    "footer": {
+        "socials": {
+            "linkedin": "https://linkedin.com/company/rannkly",
+            "website": "https://rannkly.com"
+        }
+    },
+    "api": {
+        "baseUrl": "https://forms-api.rannkly.com",
+        "auth": {
+            "method": "key",
+            "name": "X-API-Key"
+        }
+    }
+}

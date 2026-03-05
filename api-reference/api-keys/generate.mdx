@@ -1,0 +1,88 @@
+---
+title: "Generate API Key"
+api: "POST /api/settings/form-api-keys"
+description: "Generate a new API key for your team to authenticate external API requests."
+---
+
+<Note>
+  This endpoint requires **session authentication** (logged-in dashboard user) with the `system.manageIntegrations` permission. It is not accessible via API key.
+</Note>
+
+## Request
+
+### Headers
+
+| Header | Value | Required |
+|---|---|---|
+| `Content-Type` | `application/json` | Yes |
+| `Cookie` / `Authorization` | Session token | Yes |
+
+### Body Parameters
+
+<ParamField body="label" type="string" required>
+  A descriptive label for the API key (e.g., "CRM Integration", "Marketing Tool").
+
+  - Minimum: 1 character
+  - Maximum: 100 characters
+</ParamField>
+
+### Example Request
+
+```bash
+curl -X POST https://forms-api.rannkly.com/api/settings/form-api-keys \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <session_token>" \
+  -d '{
+    "label": "CRM Integration Key"
+  }'
+```
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Always `true` on success.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Success message.
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">
+      Unique identifier of the API key record.
+    </ResponseField>
+    <ResponseField name="apiKey" type="string">
+      The full API key. **Shown only once** — save it immediately.
+    </ResponseField>
+    <ResponseField name="keyPrefix" type="string">
+      The first 12 characters of the key (e.g., `rfk_a1b2c3d4`). Used for identification in the dashboard.
+    </ResponseField>
+    <ResponseField name="label" type="string">
+      The label you provided.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of when the key was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json 201
+{
+  "success": true,
+  "message": "API key generated successfully. Save it — it won't be shown again.",
+  "data": {
+    "id": "665a1b2c3d4e5f6a7b8c9d0e",
+    "apiKey": "rfk_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0",
+    "keyPrefix": "rfk_a1b2c3d4",
+    "label": "CRM Integration Key",
+    "createdAt": "2026-02-07T10:30:00.000Z"
+  }
+}
+```
+
+<Warning>
+  The `apiKey` field is returned **only in this response**. It is hashed using SHA-256 before storage and cannot be retrieved again. If you lose it, generate a new key and revoke the old one.
+</Warning>

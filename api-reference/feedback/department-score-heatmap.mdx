@@ -1,0 +1,222 @@
+---
+title: "Department Score Heatmap"
+api: "GET /external-api/v1/feedback/department-score-heatmap"
+description: "Compare department NPS scores across different locations. Returns the top 10 departments by total responses."
+---
+
+This endpoint compares department-level NPS scores across locations, providing data suitable for heatmap or comparative visualization. It identifies NPS-type questions linked to departments, calculates NPS per department per location, and returns the top 10 departments by total response volume. You can optionally filter to specific departments using the `departmentIds` parameter.
+
+### How It Works
+
+1. Finds all NPS questions linked to departments in the filtered forms.
+2. Groups NPS responses by **location** (via form `locationIds`) and **department**.
+3. Calculates NPS for each department within each location.
+4. Selects the **top 10 departments** by total responses across all locations, or filters to specific departments when `departmentIds` is provided.
+5. Computes a relative `percent` for each department within a location (for heatmap scaling).
+
+## Request
+
+### Headers
+
+| Header | Value | Required |
+|---|---|---|
+| `X-API-Key` | Your API key (`rfk_...`) | Yes |
+| `X-Team-Id` | Numeric team ID (required for global API keys) | Conditional |
+
+### Query Parameters
+
+<ParamField query="startDate" type="string" required>
+  Start of the date range. Must be a valid ISO 8601 datetime string.
+
+  **Example:** `2026-01-01T00:00:00.000Z`
+</ParamField>
+
+<ParamField query="endDate" type="string" required>
+  End of the date range. Must be a valid ISO 8601 datetime string. Must be after `startDate`.
+
+  **Example:** `2026-02-19T23:59:59.999Z`
+</ParamField>
+
+<ParamField query="formIds" type="string">
+  Comma-separated list of form IDs (MongoDB ObjectIds) to filter by.
+
+  **Example:** `665a1b2c3d4e5f6a7b8c9d0e,665a1b2c3d4e5f6a7b8c9d0f`
+</ParamField>
+
+<ParamField query="locationIds" type="string">
+  Comma-separated list of location IDs (numeric) to filter by.
+
+  **Example:** `1561,1562`
+</ParamField>
+
+<ParamField query="departmentIds" type="string">
+  Comma-separated list of department IDs (MongoDB ObjectIds) to filter by. When provided, only the specified departments are included in the heatmap instead of the default top 10.
+
+  **Example:** `65a1b2c3d4e5f6a7b8c9d0e1,65a1b2c3d4e5f6a7b8c9d0e2`
+</ParamField>
+
+### Example Request
+
+<Tabs>
+  <Tab title="cURL">
+    ```bash
+    curl -X GET "https://forms-api.rannkly.com/external-api/v1/feedback/department-score-heatmap?startDate=2026-01-01T00:00:00Z&endDate=2026-02-19T23:59:59Z&locationIds=1561,1562&departmentIds=65a1b2c3d4e5f6a7b8c9d0e1,65a1b2c3d4e5f6a7b8c9d0e2" \
+      -H "X-API-Key: rfk_your_api_key"
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    const response = await fetch(
+      "https://forms-api.rannkly.com/external-api/v1/feedback/department-score-heatmap?" +
+      new URLSearchParams({
+        startDate: "2026-01-01T00:00:00Z",
+        endDate: "2026-02-19T23:59:59Z",
+        locationIds: "1561,1562",
+        departmentIds: "65a1b2c3d4e5f6a7b8c9d0e1,65a1b2c3d4e5f6a7b8c9d0e2"
+      }),
+      { headers: { "X-API-Key": process.env.RANNKLY_API_KEY } }
+    );
+    const { data } = await response.json();
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import requests
+
+    response = requests.get(
+        "https://forms-api.rannkly.com/external-api/v1/feedback/department-score-heatmap",
+        headers={"X-API-Key": "rfk_your_api_key"},
+        params={
+            "startDate": "2026-01-01T00:00:00Z",
+            "endDate": "2026-02-19T23:59:59Z",
+            "locationIds": "1561,1562",
+            "departmentIds": "65a1b2c3d4e5f6a7b8c9d0e1,65a1b2c3d4e5f6a7b8c9d0e2"
+        }
+    )
+    data = response.json()
+    ```
+  </Tab>
+</Tabs>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  `true` if the request was successful.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  `"Department score heatmap retrieved successfully"`
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="Data Properties">
+    <ResponseField name="departments" type="array">
+      Array of unique department IDs (MongoDB ObjectIds) across all locations. Limited to top 10 by total responses, or filtered to the specified `departmentIds` when provided.
+    </ResponseField>
+    <ResponseField name="data" type="array">
+      Array of location entries, sorted by total NPS descending.
+      <Expandable title="Location Entry Properties">
+        <ResponseField name="locationName" type="string">
+          Full location name fetched from the system (e.g., `"The Suryaa New Delhi (New Delhi, India, 110025)"`).
+        </ResponseField>
+        <ResponseField name="departments" type="object">
+          Map of department ID to NPS data for that location.
+          <Expandable title="Department Entry">
+            <ResponseField name="nps" type="integer">
+              Calculated NPS score for this department at this location (-100 to +100).
+            </ResponseField>
+            <ResponseField name="percent" type="number">
+              Relative percentage of this department's NPS within the location's total NPS. Useful for heatmap scaling.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+        <ResponseField name="total" type="integer">
+          Sum of all department NPS scores at this location.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json 200
+{
+  "success": true,
+  "message": "Department score heatmap retrieved successfully",
+  "data": {
+    "departments": [
+      "65a1b2c3d4e5f6a7b8c9d0e1",
+      "65a1b2c3d4e5f6a7b8c9d0e2"
+    ],
+    "data": [
+      {
+        "locationName": "The Suryaa New Delhi (New Delhi, India, 110025)",
+        "departments": {
+          "65a1b2c3d4e5f6a7b8c9d0e1": {
+            "nps": 100,
+            "percent": 50
+          },
+          "65a1b2c3d4e5f6a7b8c9d0e2": {
+            "nps": 100,
+            "percent": 50
+          }
+        },
+        "total": 200
+      },
+      {
+        "locationName": "Grand Hyatt Mumbai",
+        "departments": {
+          "65a1b2c3d4e5f6a7b8c9d0e1": {
+            "nps": 80,
+            "percent": 57.1
+          },
+          "65a1b2c3d4e5f6a7b8c9d0e2": {
+            "nps": 60,
+            "percent": 42.9
+          }
+        },
+        "total": 140
+      }
+    ]
+  }
+}
+```
+
+### Empty Response
+
+When no NPS questions with departments are found:
+
+```json 200
+{
+  "success": true,
+  "message": "Department score heatmap retrieved successfully",
+  "data": {
+    "departments": [],
+    "data": []
+  }
+}
+```
+
+## Error Responses
+
+### Validation Error (400)
+
+```json 400
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    { "field": "startDate", "message": "startDate is required" }
+  ]
+}
+```
+
+### Missing API Key (401)
+
+```json 401
+{
+  "success": false,
+  "message": "API key is required. Provide via X-API-Key header."
+}
+```

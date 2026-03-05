@@ -1,0 +1,97 @@
+---
+title: "Introduction"
+description: "Welcome to the Rannkly Forms API — generate private form links, attach customer data, and control form behavior programmatically."
+---
+
+## What is the Rannkly Forms API?
+
+The Rannkly Forms API enables you to **programmatically generate private form links** that can be shared with specific customers. Each link is tied to a unique access token and can carry:
+
+- **Customer information** — prefill the form with name, email, phone, or custom properties
+- **Prefill data** — pre-populate specific form fields with known values
+- **Access controls** — set links as read-only or editable, configure cooldown rules
+- **Expiration** — define when the link expires and how many times it can be used
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Learn how to generate and use API keys
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Explore all available endpoints
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/errors">
+    Understand error codes and responses
+  </Card>
+  <Card title="Generate Links" icon="link" href="/api-reference/links/generate">
+    Start generating private form links
+  </Card>
+</CardGroup>
+
+## Quick Start
+
+### 1. Generate an API Key
+
+Go to **Settings → General** in your Rannkly Forms dashboard and click **"Generate New Key"**. Copy the key immediately — it is shown only once.
+
+### 2. Make Your First API Call
+
+```bash
+curl -X POST https://forms-api.rannkly.com/external-api/v1/forms/{formId}/links \
+  -H "X-API-Key: rfk_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer": {
+      "email": "john@example.com",
+      "name": "John Doe"
+    },
+    "label": "Onboarding form for John",
+    "expiresAt": "2026-03-01T00:00:00Z"
+  }'
+```
+
+### 3. Share the Link
+
+The API returns a private URL that you can share directly with the customer:
+
+```json
+{
+  "success": true,
+  "message": "Private form link generated successfully",
+  "data": {
+    "linkId": "665a1b2c3d4e5f6a7b8c9d0e",
+    "url": "https://forms.rannkly.com/f/onboarding-survey?token=tkn_a1b2c3d4...",
+    "token": "tkn_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1",
+    "contactId": "665a1b2c3d4e5f6a7b8c9d0f",
+    "expiresAt": "2026-03-01T00:00:00.000Z",
+    "createdAt": "2026-02-07T10:30:00.000Z"
+  }
+}
+```
+
+## Base URL
+
+All API requests are made to:
+
+```
+https://forms-api.rannkly.com/external-api/v1
+```
+
+## Key Concepts
+
+| Concept | Description |
+|---|---|
+| **API Key** | A secret key (`rfk_...`) used to authenticate API requests. Generated from the dashboard. |
+| **Private Form** | A form with `visibility: "private"`. Can only be accessed via a valid token URL. |
+| **Form Access Token** | A unique token (`tkn_...`) tied to a form, optionally linked to a customer and prefill data. |
+| **Contact** | A customer record automatically created/updated when you provide customer data in the API. |
+| **Prefill Data** | Key-value pairs that pre-populate form fields when the link is opened. |
+| **Form Overrides** | Per-link settings like making prefilled fields read-only or configuring cooldown behavior. |
+
+## Rate Limits
+
+The API currently does not enforce strict rate limits, but we recommend:
+
+- **Max 100 requests/minute** per API key
+- **Max 1,000 links/day** per form
+
+Exceeding these soft limits may result in throttling in future releases.
