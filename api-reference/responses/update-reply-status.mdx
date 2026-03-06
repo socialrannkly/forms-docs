@@ -1,0 +1,237 @@
+---
+title: "Update Reply Status"
+api: "PATCH /external-api/v1/forms/{formId}/responses/{responseId}/reply/status"
+description: "Update the status of a review reply on a form response. Status can be pending, published, or failed."
+---
+
+This endpoint updates the `status` field on an existing review reply for a form response. A reply must already exist on the response before updating its status.
+
+## Request
+
+### Headers
+
+| Header | Value | Required |
+|---|---|---|
+| `X-API-Key` | Your API key (`rfk_...`) | Yes |
+| `Content-Type` | `application/json` | Yes |
+| `X-Team-Id` | Numeric team ID (required for global API keys) | Conditional |
+
+### Path Parameters
+
+<ParamField path="formId" type="string" required>
+  The MongoDB ObjectId of the form (24-character hex string).
+
+  **Example:** `665a1b2c3d4e5f6a7b8c9d0e`
+</ParamField>
+
+<ParamField path="responseId" type="string" required>
+  The MongoDB ObjectId of the response (24-character hex string).
+
+  **Example:** `699d8343ed66ebe5120377b6`
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="status" type="string" required>
+  The new reply status. Must be one of: `"pending"`, `"published"`, or `"failed"`.
+</ParamField>
+
+### Example Request
+
+<Tabs>
+  <Tab title="cURL">
+    ```bash
+    curl -X PATCH "https://forms.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/responses/699d8343ed66ebe5120377b6/reply/status" \
+      -H "X-API-Key: rfk_your_api_key" \
+      -H "Content-Type: application/json" \
+      -d '{"status": "published"}'
+    ```
+  </Tab>
+  <Tab title="JavaScript">
+    ```javascript
+    const response = await fetch(
+      `https://forms.rannkly.com/external-api/v1/forms/${formId}/responses/${responseId}/reply/status`,
+      {
+        method: "PATCH",
+        headers: {
+          "X-API-Key": process.env.RANNKLY_API_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: "published" }),
+      }
+    );
+    const { data } = await response.json();
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import requests
+
+    response = requests.patch(
+        f"https://forms.rannkly.com/external-api/v1/forms/{form_id}/responses/{response_id}/reply/status",
+        headers={
+            "X-API-Key": "rfk_your_api_key",
+            "Content-Type": "application/json",
+        },
+        json={"status": "published"}
+    )
+    data = response.json()
+    ```
+  </Tab>
+</Tabs>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  `true` if the request was successful.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  `"Review reply status updated successfully"`
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The full review reply object with the updated status.
+
+  <Expandable title="Review Reply Properties">
+    <ResponseField name="replyType" type="string">
+      The reply channel: `"email"` or `"whatsapp"`.
+    </ResponseField>
+    <ResponseField name="userId" type="integer">
+      The user who sent the reply.
+    </ResponseField>
+    <ResponseField name="templateId" type="string">
+      The template identifier.
+    </ResponseField>
+    <ResponseField name="channelType" type="integer">
+      The channel type identifier.
+    </ResponseField>
+    <ResponseField name="text" type="string">
+      The reply content.
+    </ResponseField>
+    <ResponseField name="repliedAt" type="string">
+      ISO 8601 timestamp when the reply was sent.
+    </ResponseField>
+    <ResponseField name="templateName" type="string">
+      The template name used for the reply.
+    </ResponseField>
+    <ResponseField name="sender" type="string">
+      The sender (phone number or email address).
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      The updated status: `"pending"`, `"published"`, or `"failed"`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example Response
+
+```json 200
+{
+  "success": true,
+  "message": "Review reply status updated successfully",
+  "data": {
+    "replyType": "whatsapp",
+    "userId": 46,
+    "templateId": "6232jhdhss66ebe5120377b6",
+    "channelType": 1,
+    "text": "Dear vinay sharma, Thank you for staying with us!",
+    "repliedAt": "2026-03-05T13:57:19.000Z",
+    "templateName": "checkout_template_v1",
+    "sender": "9599257693",
+    "status": "published"
+  }
+}
+```
+
+## Error Responses
+
+### Validation Error (400)
+
+```json 400
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    {
+      "field": "status",
+      "message": "status must be \"pending\", \"published\", or \"failed\""
+    }
+  ]
+}
+```
+
+### No Reply Found (404)
+
+```json 404
+{
+  "success": false,
+  "message": "No reply found for this response"
+}
+```
+
+### Response Not Found (404)
+
+```json 404
+{
+  "success": false,
+  "message": "Response not found"
+}
+```
+
+### Form Not Found (404)
+
+```json 404
+{
+  "success": false,
+  "message": "Form not found or does not belong to your team"
+}
+```
+
+### Missing API Key (401)
+
+```json 401
+{
+  "success": false,
+  "message": "API key is required. Provide via X-API-Key header."
+}
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Mark a reply as published after delivery confirmation">
+    After confirming the WhatsApp or email was delivered, update the status.
+
+    ```javascript
+    await fetch(
+      `https://forms.rannkly.com/external-api/v1/forms/${formId}/responses/${responseId}/reply/status`,
+      {
+        method: "PATCH",
+        headers: {
+          "X-API-Key": apiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: "published" }),
+      }
+    );
+    ```
+  </Accordion>
+  <Accordion title="Mark a reply as failed on delivery error">
+    If the reply delivery fails, update the status to track the failure.
+
+    ```javascript
+    await fetch(
+      `https://forms.rannkly.com/external-api/v1/forms/${formId}/responses/${responseId}/reply/status`,
+      {
+        method: "PATCH",
+        headers: {
+          "X-API-Key": apiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: "failed" }),
+      }
+    );
+    ```
+  </Accordion>
+</AccordionGroup>
