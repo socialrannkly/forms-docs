@@ -76,14 +76,14 @@ This endpoint returns a paginated list of form responses (submissions) for a spe
 <Tabs>
   <Tab title="cURL">
     ```bash
-    curl -X GET "https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/responses?page=1&limit=10&status=completed&search=john" \
+    curl -X GET "https://forms.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/responses?page=1&limit=10&status=completed&search=john" \
       -H "X-API-Key: rfk_your_api_key"
     ```
   </Tab>
   <Tab title="JavaScript">
     ```javascript
     const response = await fetch(
-      "https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/responses?" +
+      "https://forms.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/responses?" +
       new URLSearchParams({ page: "1", limit: "10", status: "completed" }),
       { headers: { "X-API-Key": process.env.RANNKLY_API_KEY } }
     );
@@ -95,7 +95,7 @@ This endpoint returns a paginated list of form responses (submissions) for a spe
     import requests
 
     response = requests.get(
-        "https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/responses",
+        "https://forms.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/responses",
         headers={"X-API-Key": "rfk_your_api_key"},
         params={"page": 1, "limit": 10, "status": "completed"}
     )
@@ -311,7 +311,7 @@ This endpoint returns a paginated list of form responses (submissions) for a spe
 
     while (true) {
       const res = await fetch(
-        `https://forms-api.rannkly.com/external-api/v1/forms/${formId}/responses?page=${page}&limit=100&status=completed`,
+        `https://forms.rannkly.com/external-api/v1/forms/${formId}/responses?page=${page}&limit=100&status=completed`,
         { headers: { "X-API-Key": apiKey } }
       );
       const { data } = await res.json();
@@ -329,7 +329,7 @@ This endpoint returns a paginated list of form responses (submissions) for a spe
     const lastChecked = new Date(Date.now() - 60000).toISOString();
 
     const res = await fetch(
-      `https://forms-api.rannkly.com/external-api/v1/forms/${formId}/responses?` +
+      `https://forms.rannkly.com/external-api/v1/forms/${formId}/responses?` +
       `startDate=${lastChecked}&sortBy=createdAt&sortOrder=desc`,
       { headers: { "X-API-Key": apiKey } }
     );
@@ -340,7 +340,7 @@ This endpoint returns a paginated list of form responses (submissions) for a spe
 
     ```javascript
     const res = await fetch(
-      `https://forms-api.rannkly.com/external-api/v1/forms/${formId}/responses?search=john@example.com`,
+      `https://forms.rannkly.com/external-api/v1/forms/${formId}/responses?search=john@example.com`,
       { headers: { "X-API-Key": apiKey } }
     );
     ```

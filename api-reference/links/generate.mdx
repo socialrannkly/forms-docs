@@ -176,7 +176,7 @@ This is the primary endpoint of the Rannkly Forms API. It creates a unique, toke
 <Tabs>
   <Tab title="Basic Link">
     ```bash
-    curl -X POST https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
+    curl -X POST https://forms.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
       -H "X-API-Key: rfk_your_api_key" \
       -H "Content-Type: application/json" \
       -d '{
@@ -186,7 +186,7 @@ This is the primary endpoint of the Rannkly Forms API. It creates a unique, toke
   </Tab>
   <Tab title="With Customer Data">
     ```bash
-    curl -X POST https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
+    curl -X POST https://forms.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
       -H "X-API-Key: rfk_your_api_key" \
       -H "Content-Type: application/json" \
       -d '{
@@ -208,7 +208,7 @@ This is the primary endpoint of the Rannkly Forms API. It creates a unique, toke
     Generate a link with prefilled data and an **edit-only cooldown** — the respondent can submit once, then re-open the same link to edit their response within 15 minutes. All prefilled fields remain editable.
 
     ```bash
-    curl -X POST https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
+    curl -X POST https://forms.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
       -H "X-API-Key: rfk_your_api_key" \
       -H "Content-Type: application/json" \
       -d '{
@@ -241,7 +241,7 @@ This is the primary endpoint of the Rannkly Forms API. It creates a unique, toke
     Prefill all fields as **read-only** so the respondent can see the data but cannot change it. Useful when you want to show context (e.g., order ID, email) without allowing edits.
 
     ```bash
-    curl -X POST https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
+    curl -X POST https://forms.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
       -H "X-API-Key: rfk_your_api_key" \
       -H "Content-Type: application/json" \
       -d '{
@@ -264,7 +264,7 @@ This is the primary endpoint of the Rannkly Forms API. It creates a unique, toke
     Prefill multiple fields but make **some read-only and others editable**. Here the order ID and email are locked, while the name and phone remain editable.
 
     ```bash
-    curl -X POST https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
+    curl -X POST https://forms.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
       -H "X-API-Key: rfk_your_api_key" \
       -H "Content-Type: application/json" \
       -d '{
@@ -295,7 +295,7 @@ This is the primary endpoint of the Rannkly Forms API. It creates a unique, toke
     Control editability of **individual sub-fields** inside a `contact_info` question. Here the email is locked but the name and phone remain editable.
 
     ```bash
-    curl -X POST https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
+    curl -X POST https://forms.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
       -H "X-API-Key: rfk_your_api_key" \
       -H "Content-Type: application/json" \
       -d '{
@@ -330,7 +330,7 @@ This is the primary endpoint of the Rannkly Forms API. It creates a unique, toke
     Generate a **one-time link** that blocks resubmission for 24 hours and expires on a specific date. Prefilled fields are read-only.
 
     ```bash
-    curl -X POST https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
+    curl -X POST https://forms.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links \
       -H "X-API-Key: rfk_your_api_key" \
       -H "Content-Type: application/json" \
       -d '{
@@ -360,7 +360,7 @@ This is the primary endpoint of the Rannkly Forms API. It creates a unique, toke
   <Tab title="Node.js">
     ```javascript
     const response = await fetch(
-      "https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links",
+      "https://forms.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links",
       {
         method: "POST",
         headers: {
@@ -406,7 +406,7 @@ This is the primary endpoint of the Rannkly Forms API. It creates a unique, toke
     import os
 
     response = requests.post(
-        "https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links",
+        "https://forms.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links",
         headers={
             "X-API-Key": os.environ["RANNKLY_FORMS_API_KEY"],
             "Content-Type": "application/json",

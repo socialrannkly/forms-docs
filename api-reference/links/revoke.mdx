@@ -28,14 +28,14 @@ description: "Revoke a private form link, immediately preventing it from being u
 <Tabs>
   <Tab title="cURL">
     ```bash
-    curl -X DELETE https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links/665a1b2c3d4e5f6a7b8c9d12 \
+    curl -X DELETE https://forms.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links/665a1b2c3d4e5f6a7b8c9d12 \
       -H "X-API-Key: rfk_your_api_key"
     ```
   </Tab>
   <Tab title="Node.js">
     ```javascript
     const response = await fetch(
-      "https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links/665a1b2c3d4e5f6a7b8c9d12",
+      "https://forms.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links/665a1b2c3d4e5f6a7b8c9d12",
       {
         method: "DELETE",
         headers: {
@@ -54,7 +54,7 @@ description: "Revoke a private form link, immediately preventing it from being u
     import os
 
     response = requests.delete(
-        "https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links/665a1b2c3d4e5f6a7b8c9d12",
+        "https://forms.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/links/665a1b2c3d4e5f6a7b8c9d12",
         headers={
             "X-API-Key": os.environ["RANNKLY_FORMS_API_KEY"],
         },

@@ -46,14 +46,14 @@ This endpoint returns all unique category names extracted from AI feedback analy
 <Tabs>
   <Tab title="cURL">
     ```bash
-    curl -X GET "https://forms-api.rannkly.com/external-api/v1/feedback/response-categories?startDate=2026-01-01T00:00:00Z&endDate=2026-02-19T23:59:59Z&locationIds=1561" \
+    curl -X GET "https://forms.rannkly.com/external-api/v1/feedback/response-categories?startDate=2026-01-01T00:00:00Z&endDate=2026-02-19T23:59:59Z&locationIds=1561" \
       -H "X-API-Key: rfk_your_api_key"
     ```
   </Tab>
   <Tab title="JavaScript">
     ```javascript
     const response = await fetch(
-      "https://forms-api.rannkly.com/external-api/v1/feedback/response-categories?" +
+      "https://forms.rannkly.com/external-api/v1/feedback/response-categories?" +
       new URLSearchParams({
         startDate: "2026-01-01T00:00:00Z",
         endDate: "2026-02-19T23:59:59Z",
@@ -70,7 +70,7 @@ This endpoint returns all unique category names extracted from AI feedback analy
     import requests
 
     response = requests.get(
-        "https://forms-api.rannkly.com/external-api/v1/feedback/response-categories",
+        "https://forms.rannkly.com/external-api/v1/feedback/response-categories",
         headers={"X-API-Key": "rfk_your_api_key"},
         params={
             "startDate": "2026-01-01T00:00:00Z",

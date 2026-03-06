@@ -36,14 +36,14 @@ This endpoint returns the complete details of a single form response, including 
 <Tabs>
   <Tab title="cURL">
     ```bash
-    curl -X GET "https://forms-api.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/responses/667b2c3d4e5f6a7b8c9d1234" \
+    curl -X GET "https://forms.rannkly.com/external-api/v1/forms/665a1b2c3d4e5f6a7b8c9d0e/responses/667b2c3d4e5f6a7b8c9d1234" \
       -H "X-API-Key: rfk_your_api_key"
     ```
   </Tab>
   <Tab title="JavaScript">
     ```javascript
     const response = await fetch(
-      `https://forms-api.rannkly.com/external-api/v1/forms/${formId}/responses/${responseId}`,
+      `https://forms.rannkly.com/external-api/v1/forms/${formId}/responses/${responseId}`,
       { headers: { "X-API-Key": process.env.RANNKLY_API_KEY } }
     );
     const { data } = await response.json();
@@ -54,7 +54,7 @@ This endpoint returns the complete details of a single form response, including 
     import requests
 
     response = requests.get(
-        f"https://forms-api.rannkly.com/external-api/v1/forms/{form_id}/responses/{response_id}",
+        f"https://forms.rannkly.com/external-api/v1/forms/{form_id}/responses/{response_id}",
         headers={"X-API-Key": "rfk_your_api_key"}
     )
     data = response.json()
@@ -289,7 +289,7 @@ This endpoint returns the complete details of a single form response, including 
 
     ```javascript
     const res = await fetch(
-      `https://forms-api.rannkly.com/external-api/v1/forms/${formId}/responses/${responseId}`,
+      `https://forms.rannkly.com/external-api/v1/forms/${formId}/responses/${responseId}`,
       { headers: { "X-API-Key": apiKey } }
     );
     const { data } = await res.json();

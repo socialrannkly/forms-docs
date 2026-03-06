@@ -50,14 +50,14 @@ This endpoint provides a high-level summary of ratings across all matching form 
 <Tabs>
   <Tab title="cURL">
     ```bash
-    curl -X GET "https://forms-api.rannkly.com/external-api/v1/feedback/rating-overview?startDate=2026-01-01T00:00:00Z&endDate=2026-02-19T23:59:59Z" \
+    curl -X GET "https://forms.rannkly.com/external-api/v1/feedback/rating-overview?startDate=2026-01-01T00:00:00Z&endDate=2026-02-19T23:59:59Z" \
       -H "X-API-Key: rfk_your_api_key"
     ```
   </Tab>
   <Tab title="JavaScript">
     ```javascript
     const response = await fetch(
-      "https://forms-api.rannkly.com/external-api/v1/feedback/rating-overview?" +
+      "https://forms.rannkly.com/external-api/v1/feedback/rating-overview?" +
       new URLSearchParams({
         startDate: "2026-01-01T00:00:00Z",
         endDate: "2026-02-19T23:59:59Z"
@@ -72,7 +72,7 @@ This endpoint provides a high-level summary of ratings across all matching form 
     import requests
 
     response = requests.get(
-        "https://forms-api.rannkly.com/external-api/v1/feedback/rating-overview",
+        "https://forms.rannkly.com/external-api/v1/feedback/rating-overview",
         headers={"X-API-Key": "rfk_your_api_key"},
         params={
             "startDate": "2026-01-01T00:00:00Z",

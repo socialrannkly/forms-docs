@@ -35,14 +35,14 @@ This endpoint returns unique departments that are linked to NPS-type questions a
 <Tabs>
   <Tab title="cURL">
     ```bash
-    curl -X GET "https://forms-api.rannkly.com/external-api/v1/feedback/departments?locationIds=1561" \
+    curl -X GET "https://forms.rannkly.com/external-api/v1/feedback/departments?locationIds=1561" \
       -H "X-API-Key: rfk_your_api_key"
     ```
   </Tab>
   <Tab title="JavaScript">
     ```javascript
     const response = await fetch(
-      "https://forms-api.rannkly.com/external-api/v1/feedback/departments?" +
+      "https://forms.rannkly.com/external-api/v1/feedback/departments?" +
       new URLSearchParams({ locationIds: "1561" }),
       { headers: { "X-API-Key": process.env.RANNKLY_API_KEY } }
     );
@@ -54,7 +54,7 @@ This endpoint returns unique departments that are linked to NPS-type questions a
     import requests
 
     response = requests.get(
-        "https://forms-api.rannkly.com/external-api/v1/feedback/departments",
+        "https://forms.rannkly.com/external-api/v1/feedback/departments",
         headers={"X-API-Key": "rfk_your_api_key"},
         params={"locationIds": "1561"}
     )

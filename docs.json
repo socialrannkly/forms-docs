@@ -121,7 +121,7 @@
         }
     },
     "api": {
-        "baseUrl": "https://forms-api.rannkly.com",
+        "baseUrl": "https://forms.rannkly.com",
         "auth": {
             "method": "key",
             "name": "X-API-Key"

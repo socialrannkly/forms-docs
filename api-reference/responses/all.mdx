@@ -98,7 +98,7 @@ Each response includes the form name, location names, IP address, AI analysis, q
 <Tabs>
   <Tab title="cURL">
     ```bash
-    curl -X GET "https://forms-api.rannkly.com/external-api/v1/forms/responses?page=1&limit=10&locationIds=101,205&npsCategory=promoter&startDate=2026-01-01T00:00:00.000Z&endDate=2026-03-01T23:59:59.999Z" \
+    curl -X GET "https://forms.rannkly.com/external-api/v1/forms/responses?page=1&limit=10&locationIds=101,205&npsCategory=promoter&startDate=2026-01-01T00:00:00.000Z&endDate=2026-03-01T23:59:59.999Z" \
       -H "X-API-Key: rfk_your_api_key"
     ```
   </Tab>
@@ -114,7 +114,7 @@ Each response includes the form name, location names, IP address, AI analysis, q
     });
 
     const response = await fetch(
-      `https://forms-api.rannkly.com/external-api/v1/forms/responses?${params}`,
+      `https://forms.rannkly.com/external-api/v1/forms/responses?${params}`,
       { headers: { "X-API-Key": process.env.RANNKLY_API_KEY } }
     );
     const { data } = await response.json();
@@ -125,7 +125,7 @@ Each response includes the form name, location names, IP address, AI analysis, q
     import requests
 
     response = requests.get(
-        "https://forms-api.rannkly.com/external-api/v1/forms/responses",
+        "https://forms.rannkly.com/external-api/v1/forms/responses",
         headers={"X-API-Key": "rfk_your_api_key"},
         params={
             "page": 1,
@@ -227,6 +227,9 @@ Each response includes the form name, location names, IP address, AI analysis, q
             <ResponseField name="fileUrls" type="string[] | undefined">
               Array of uploaded file URLs, for file upload questions only.
             </ResponseField>
+            <ResponseField name="order" type="integer">
+              The display order of the question in the form. Answers are sorted by this field.
+            </ResponseField>
           </Expandable>
         </ResponseField>
         <ResponseField name="status" type="string">
@@ -245,10 +248,10 @@ Each response includes the form name, location names, IP address, AI analysis, q
           Name of the respondent, if captured by the form.
         </ResponseField>
         <ResponseField name="createdAt" type="string">
-          ISO 8601 timestamp when the response was started.
+          Formatted date when the response was started (e.g., `"Feb 24th, 2026 04:43:16 PM"`).
         </ResponseField>
         <ResponseField name="completedAt" type="string | undefined">
-          ISO 8601 timestamp when the response was completed.
+          Formatted date when the response was completed (e.g., `"Feb 24th, 2026 04:45:30 PM"`).
         </ResponseField>
       </Expandable>
     </ResponseField>
@@ -306,26 +309,30 @@ Each response includes the form name, location names, IP address, AI analysis, q
             "questionType": "short_text",
             "questionTitle": "What is your name?",
             "value": "Jane Smith",
-            "textValue": "Jane Smith"
+            "textValue": "Jane Smith",
+            "order": 0
           },
           {
             "questionId": "q_nps",
             "questionType": "nps",
             "questionTitle": "How likely are you to recommend us?",
-            "value": 9
+            "value": 9,
+            "order": 1
           },
           {
             "questionId": "q_rating",
             "questionType": "rating",
             "questionTitle": "Rate our service",
-            "value": 5
+            "value": 5,
+            "order": 2
           },
           {
             "questionId": "q_feedback",
             "questionType": "long_text",
             "questionTitle": "Any additional feedback?",
             "value": "Excellent experience, very friendly staff!",
-            "textValue": "Excellent experience, very friendly staff!"
+            "textValue": "Excellent experience, very friendly staff!",
+            "order": 3
           }
         ],
         "status": "completed",
@@ -333,8 +340,8 @@ Each response includes the form name, location names, IP address, AI analysis, q
         "avgRating": 4.5,
         "respondentEmail": "jane@example.com",
         "respondentName": "Jane Smith",
-        "createdAt": "2026-02-15T10:30:00.000Z",
-        "completedAt": "2026-02-15T10:32:15.000Z"
+        "createdAt": "Feb 15th, 2026 10:30:00 AM",
+        "completedAt": "Feb 15th, 2026 10:32:15 AM"
       }
     ],
     "pagination": {
@@ -400,7 +407,7 @@ Each response includes the form name, location names, IP address, AI analysis, q
 
     while (true) {
       const res = await fetch(
-        `https://forms-api.rannkly.com/external-api/v1/forms/responses?page=${page}&limit=100&status=completed`,
+        `https://forms.rannkly.com/external-api/v1/forms/responses?page=${page}&limit=100&status=completed`,
         { headers: { "X-API-Key": apiKey } }
       );
       const { data } = await res.json();
@@ -416,7 +423,7 @@ Each response includes the form name, location names, IP address, AI analysis, q
 
     ```javascript
     const res = await fetch(
-      `https://forms-api.rannkly.com/external-api/v1/forms/responses?` +
+      `https://forms.rannkly.com/external-api/v1/forms/responses?` +
       `locationIds=101,205&npsCategory=promoter&sortBy=createdAt&sortOrder=desc`,
       { headers: { "X-API-Key": apiKey } }
     );
@@ -429,7 +436,7 @@ Each response includes the form name, location names, IP address, AI analysis, q
     const lastSync = new Date(Date.now() - 3600000).toISOString();
 
     const res = await fetch(
-      `https://forms-api.rannkly.com/external-api/v1/forms/responses?` +
+      `https://forms.rannkly.com/external-api/v1/forms/responses?` +
       `startDate=${lastSync}&rating=4,5&sortBy=createdAt&sortOrder=desc`,
       { headers: { "X-API-Key": apiKey } }
     );
@@ -442,7 +449,7 @@ Each response includes the form name, location names, IP address, AI analysis, q
     import requests
 
     response = requests.get(
-        "https://forms-api.rannkly.com/external-api/v1/forms/responses",
+        "https://forms.rannkly.com/external-api/v1/forms/responses",
         headers={"X-API-Key": "rfk_your_api_key"},
         params={
             "departmentIds": "664f1a2b3c4d5e6f7a8b9c0d",

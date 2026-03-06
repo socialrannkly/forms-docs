@@ -28,7 +28,7 @@ This endpoint returns the full structure of a form — including all questions, 
 ### Example Request
 
 ```bash
-curl -X GET "https://forms-api.rannkly.com/external-api/v1/forms/slug/customer-feedback" \
+curl -X GET "https://forms.rannkly.com/external-api/v1/forms/slug/customer-feedback" \
   -H "X-API-Key: rfk_your_api_key"
 ```
 
@@ -317,7 +317,7 @@ Returned when the slug doesn't match any form in your team, or the form has been
 
     ```javascript
     const response = await fetch(
-      "https://forms-api.rannkly.com/external-api/v1/forms/slug/customer-feedback",
+      "https://forms.rannkly.com/external-api/v1/forms/slug/customer-feedback",
       { headers: { "X-API-Key": process.env.RANNKLY_API_KEY } }
     );
     const { data } = await response.json();
@@ -333,7 +333,7 @@ Returned when the slug doesn't match any form in your team, or the form has been
     ```javascript
     // 1. Fetch form structure
     const formRes = await fetch(
-      "https://forms-api.rannkly.com/external-api/v1/forms/slug/nps-survey",
+      "https://forms.rannkly.com/external-api/v1/forms/slug/nps-survey",
       { headers: { "X-API-Key": apiKey } }
     );
     const { data: form } = await formRes.json();
@@ -343,7 +343,7 @@ Returned when the slug doesn't match any form in your team, or the form has been
 
     // 3. Generate a private link with prefill
     await fetch(
-      `https://forms-api.rannkly.com/external-api/v1/forms/${form.id}/links`,
+      `https://forms.rannkly.com/external-api/v1/forms/${form.id}/links`,
       {
         method: "POST",
         headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
