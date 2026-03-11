@@ -56,6 +56,7 @@
                             "api-reference/responses/all",
                             "api-reference/responses/list",
                             "api-reference/responses/get",
+                            "api-reference/responses/submit",
                             "api-reference/responses/store-reply",
                             "api-reference/responses/get-reply",
                             "api-reference/responses/update-reply-status"

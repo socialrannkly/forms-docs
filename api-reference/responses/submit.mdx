@@ -1,0 +1,570 @@
+---
+title: "Submit Form"
+api: "POST /external-api/v1/forms/{formId}/submit"
+description: "Submit a form response via the external API. Allows external applications to programmatically submit answers to a published form."
+---
+
+This endpoint allows external applications to submit form responses programmatically. Unlike the public form submission flow, this endpoint is authenticated via API key and bypasses spam detection, cooldown, and rate limiting — it is designed for trusted integrations.
+
+The form must be **published** to accept submissions.
+
+## Request
+
+### Headers
+
+| Header | Value | Required |
+|---|---|---|
+| `X-API-Key` | Your API key (`rfk_...`) | Yes |
+| `Content-Type` | `application/json` | Yes |
+| `X-Team-Id` | Numeric team ID (required for global API keys) | Conditional |
+
+### Path Parameters
+
+<ParamField path="formId" type="string" required>
+  The MongoDB ObjectId of the form (24-character hex string).
+
+  **Example:** `665a1b2c3d4e5f6a7b8c9d0e`
+</ParamField>
+
+### Body Parameters
+
+<ParamField body="answers" type="object" required>
+  A key-value object where each key is a **question ID** and each value is the answer.
+
+  You can obtain question IDs from the [Get Form by Slug](/api-reference/forms/get-by-slug) endpoint, which returns all questions with their `id`, `type`, `title`, and `required` status.
+
+  See the [Answer Format by Question Type](#answer-format-by-question-type) section below for the expected value format per question type.
+</ParamField>
+
+<ParamField body="hiddenFields" type="object">
+  Optional key-value object for hidden field values. These are metadata fields that are not visible to the respondent but are stored with the submission.
+
+  **Example:** `{ "source": "crm", "bookingId": "BK-2026-001" }`
+</ParamField>
+
+<ParamField body="respondentEmail" type="string">
+  Optional email address of the respondent. If not provided, the system attempts to extract it from the answers (e.g., from an `email` or `contact_info` question).
+
+  **Example:** `"john@example.com"`
+</ParamField>
+
+<ParamField body="respondentName" type="string">
+  Optional name of the respondent. If not provided, the system attempts to extract it from the answers (e.g., from a `contact_info` question).
+
+  Maximum 255 characters.
+
+  **Example:** `"John Doe"`
+</ParamField>
+
+<ParamField body="utmSource" type="string">
+  UTM source parameter — identifies which site or platform sent the traffic. Also accepts `utm_source` (snake_case).
+
+  Maximum 500 characters.
+
+  **Example:** `"google"`
+</ParamField>
+
+<ParamField body="utmMedium" type="string">
+  UTM medium parameter — identifies the marketing medium (e.g., cpc, email, social). Also accepts `utm_medium`.
+
+  Maximum 500 characters.
+
+  **Example:** `"cpc"`
+</ParamField>
+
+<ParamField body="utmCampaign" type="string">
+  UTM campaign parameter — identifies the specific campaign name. Also accepts `utm_campaign`.
+
+  Maximum 500 characters.
+
+  **Example:** `"spring_sale"`
+</ParamField>
+
+<ParamField body="utmTerm" type="string">
+  UTM term parameter — identifies paid search keywords. Also accepts `utm_term`.
+
+  Maximum 500 characters.
+
+  **Example:** `"hotel reviews"`
+</ParamField>
+
+<ParamField body="utmContent" type="string">
+  UTM content parameter — differentiates similar content or links within the same ad. Also accepts `utm_content`.
+
+  Maximum 500 characters.
+
+  **Example:** `"banner_v1"`
+</ParamField>
+
+## Response
+
+### Success (201 Created)
+
+```json 201
+{
+  "success": true,
+  "message": "Form submitted successfully",
+  "data": {
+    "submissionId": "67c9a1b2c3d4e5f6a7b8c9d0",
+    "formId": "665a1b2c3d4e5f6a7b8c9d0e",
+    "status": "completed",
+    "respondentEmail": "john@example.com",
+    "respondentName": "John Doe",
+    "createdAt": "2026-03-06T10:30:00.000Z"
+  }
+}
+```
+
+### Validation Error (400)
+
+```json 400
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    {
+      "field": "answers",
+      "message": "answers must contain at least one entry"
+    }
+  ]
+}
+```
+
+### Required Field Missing (400)
+
+```json 400
+{
+  "success": false,
+  "message": "Required field \"How would you rate your experience?\" is missing"
+}
+```
+
+### Form Not Found (404)
+
+```json 404
+{
+  "success": false,
+  "message": "Form not found, not published, or does not belong to your team"
+}
+```
+
+### Invalid Form ID (400)
+
+```json 400
+{
+  "success": false,
+  "message": "Invalid form ID format"
+}
+```
+
+### Missing API Key (401)
+
+```json 401
+{
+  "success": false,
+  "message": "API key is required. Provide via X-API-Key header."
+}
+```
+
+## Answer Format by Question Type
+
+Each question type expects a specific value format in the `answers` object. Below is the expected format for each type.
+
+<AccordionGroup>
+  <Accordion title="Text Questions">
+    **Types:** `short_text`, `long_text`
+
+    Provide a string value.
+
+    ```json
+    {
+      "q_name": "John Doe",
+      "q_feedback": "Great experience overall, the staff was very friendly."
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Number">
+    **Type:** `number`
+
+    Provide a numeric value.
+
+    ```json
+    {
+      "q_age": 28
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Rating">
+    **Type:** `rating`
+
+    Provide a numeric value within the question's configured min/max range (typically 1–5 or 1–10).
+
+    ```json
+    {
+      "q_staff_rating": 4,
+      "q_cleanliness_rating": 5
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="NPS (Net Promoter Score)">
+    **Type:** `nps`
+
+    Provide a numeric value from 0 to 10.
+
+    ```json
+    {
+      "q_recommend_nps": 9,
+      "q_return_nps": 7
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Opinion Scale">
+    **Type:** `opinion_scale`
+
+    Provide a numeric value within the configured range.
+
+    ```json
+    {
+      "q_satisfaction": 8
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Yes/No">
+    **Type:** `yes_no`
+
+    Provide `"yes"` or `"no"` as a string.
+
+    ```json
+    {
+      "q_newsletter": "yes"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Legal / Checkbox">
+    **Types:** `legal`, `checkbox`
+
+    For `legal`, provide `"accept"` to indicate agreement.
+
+    For `checkbox`, provide `true` or `false`.
+
+    ```json
+    {
+      "q_terms": "accept",
+      "q_marketing_consent": true
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Multi Select / Dropdown / Picture Choice">
+    **Types:** `multi_select`, `dropdown`, `picture_choice`
+
+    Provide an array of selected option values (strings).
+
+    ```json
+    {
+      "q_amenities": ["wifi", "pool", "gym"],
+      "q_department": ["housekeeping"],
+      "q_preferred_room": ["suite_ocean_view"]
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Email">
+    **Type:** `email`
+
+    Provide a valid email address as a string.
+
+    ```json
+    {
+      "q_email": "john@example.com"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Phone Number">
+    **Type:** `phone_number`
+
+    Provide a phone number as a string, including the country code if applicable.
+
+    ```json
+    {
+      "q_phone": "+919599257693"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Contact Info">
+    **Type:** `contact_info`
+
+    Provide an object with contact fields.
+
+    ```json
+    {
+      "q_contact": {
+        "firstName": "John",
+        "lastName": "Doe",
+        "email": "john@example.com",
+        "phoneNumber": "+919599257693"
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Address">
+    **Type:** `address`
+
+    Provide an object with address fields.
+
+    ```json
+    {
+      "q_address": {
+        "street": "123 Main Street",
+        "city": "New Delhi",
+        "state": "Delhi",
+        "country": "India",
+        "zipCode": "110001"
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Website">
+    **Type:** `website`
+
+    Provide a valid URL as a string.
+
+    ```json
+    {
+      "q_website": "https://example.com"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Date / Date Picker">
+    **Types:** `date`, `date_picker`
+
+    Provide a date string in ISO 8601 or `YYYY-MM-DD` format.
+
+    ```json
+    {
+      "q_visit_date": "2026-03-05"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Time / Time Picker">
+    **Types:** `time`, `time_picker`
+
+    Provide a time string in `HH:mm` or `HH:mm:ss` format.
+
+    ```json
+    {
+      "q_checkin_time": "14:30"
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Ranking">
+    **Type:** `ranking`
+
+    Provide an ordered array of option values (first item = highest rank).
+
+    ```json
+    {
+      "q_priority": ["cleanliness", "location", "price", "amenities"]
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Matrix">
+    **Type:** `matrix`
+
+    Provide an object where each key is a row label and the value is the selected column option.
+
+    ```json
+    {
+      "q_satisfaction_matrix": {
+        "Room Cleanliness": "Very Satisfied",
+        "Staff Friendliness": "Satisfied",
+        "Food Quality": "Neutral"
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="File Upload">
+    **Type:** `file_upload`
+
+    Provide an array of file URL strings (pre-uploaded files).
+
+    ```json
+    {
+      "q_documents": [
+        "https://storage.example.com/files/id-proof.pdf",
+        "https://storage.example.com/files/booking-confirmation.pdf"
+      ]
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Complete Example
+
+Here is a full example submitting a form with multiple question types:
+
+```json
+{
+  "answers": {
+    "q_staff_rating": 4,
+    "q_cleanliness_rating": 5,
+    "q_food_rating": 3,
+    "q_recommend_nps": 9,
+    "q_return_nps": 7,
+    "q_name": "John Doe",
+    "q_feedback": "Great experience overall",
+    "q_email": "john@example.com",
+    "q_department": ["housekeeping"],
+    "q_visit_date": "2026-03-05",
+    "q_amenities": ["wifi", "pool", "gym"],
+    "q_contact": {
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "john@example.com",
+      "phoneNumber": "+919599257693"
+    }
+  },
+  "hiddenFields": {
+    "source": "crm",
+    "bookingId": "BK-2026-001"
+  },
+  "respondentEmail": "john@example.com",
+  "respondentName": "John Doe",
+  "utmSource": "google",
+  "utmMedium": "cpc",
+  "utmCampaign": "spring_sale"
+}
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="CRM Integration">
+    Submit form responses from your CRM when a customer interaction is logged.
+
+    ```javascript
+    const res = await fetch(
+      `https://forms.rannkly.com/external-api/v1/forms/${formId}/submit`,
+      {
+        method: "POST",
+        headers: {
+          "X-API-Key": apiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          answers: {
+            q_staff_rating: 5,
+            q_feedback: "Excellent service from the team",
+            q_email: "customer@example.com",
+          },
+          hiddenFields: {
+            source: "salesforce",
+            crmTicketId: "TICKET-12345",
+          },
+          respondentEmail: "customer@example.com",
+          respondentName: "Jane Smith",
+        }),
+      }
+    );
+    const { data } = await res.json();
+    console.log(`Submission created: ${data.submissionId}`);
+    ```
+  </Accordion>
+
+  <Accordion title="Bulk Import">
+    Import historical survey responses by submitting them one by one.
+
+    ```javascript
+    const responses = [
+      {
+        answers: { q_rating: 4, q_feedback: "Good" },
+        respondentEmail: "user1@example.com",
+      },
+      {
+        answers: { q_rating: 5, q_feedback: "Excellent" },
+        respondentEmail: "user2@example.com",
+      },
+    ];
+
+    for (const response of responses) {
+      await fetch(
+        `https://forms.rannkly.com/external-api/v1/forms/${formId}/submit`,
+        {
+          method: "POST",
+          headers: {
+            "X-API-Key": apiKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(response),
+        }
+      );
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="PMS / Booking System Integration">
+    Automatically submit guest feedback from your property management system after checkout.
+
+    ```javascript
+    const res = await fetch(
+      `https://forms.rannkly.com/external-api/v1/forms/${formId}/submit`,
+      {
+        method: "POST",
+        headers: {
+          "X-API-Key": apiKey,
+          "Content-Type": "application/json",
+          "X-Team-Id": "42",
+        },
+        body: JSON.stringify({
+          answers: {
+            q_overall_rating: 4,
+            q_recommend_nps: 8,
+            q_room_cleanliness: 5,
+            q_staff_friendliness: 4,
+            q_comments: "Lovely stay, will come back!",
+            q_contact: {
+              firstName: "Vinay",
+              lastName: "Sharma",
+              email: "vinay@example.com",
+              phoneNumber: "+919876543210",
+            },
+          },
+          hiddenFields: {
+            source: "pms",
+            bookingId: "BK-2026-042",
+            roomNumber: "301",
+            checkoutDate: "2026-03-05",
+          },
+        }),
+      }
+    );
+    const { data } = await res.json();
+    console.log(`Guest feedback submitted: ${data.submissionId}`);
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Notes
+
+- The form must be in **published** status. Draft or deleted forms will return a 404 error.
+- All **required** questions must have valid answers. The API returns a descriptive error message indicating which field is missing.
+- **Hidden fields** are stored alongside the submission but are not validated against form questions.
+- Submissions via this endpoint trigger all post-submission tasks: **webhooks**, **notifications**, **contact sync**, and **AI feedback analysis** (if enabled on the form).
+- There is no spam detection or cooldown applied — this endpoint is for trusted, authenticated integrations only.
+- **UTM parameters** (`utmSource`, `utmMedium`, `utmCampaign`, `utmTerm`, `utmContent`) are stored as tracking metadata on the submission and displayed in the submission detail page under "Attribution". These follow the industry-standard [Urchin Tracking Module](https://en.wikipedia.org/wiki/UTM_parameters) convention.
+- To discover question IDs and types for a form, use the [Get Form by Slug](/api-reference/forms/get-by-slug) endpoint.
