@@ -1,0 +1,242 @@
+---
+title: "List Forms"
+api: "GET /external-api/v1/forms"
+description: "Retrieve a paginated list of all forms in your account with optional filters for status, location, and search."
+---
+
+This endpoint returns a paginated list of forms belonging to your account. Each form includes basic metadata such as name, slug, status, response count, associated locations, and tags.
+
+Use this endpoint to discover available forms before fetching details or submitting responses.
+
+<Note>
+  Results are scoped to the team associated with your API key. Deleted forms are excluded.
+</Note>
+
+## Request
+
+### Headers
+
+| Header | Value | Required |
+|---|---|---|
+| `X-API-Key` | Your API key (`rfk_...`) | Yes |
+| `X-Team-Id` | Numeric team ID (required for global API keys) | Conditional |
+
+### Query Parameters
+
+<ParamField query="page" type="integer" default="1">
+  Page number for pagination. Starts at 1.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="20">
+  Number of forms per page. Minimum 1, maximum 100.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter forms by status.
+
+  **Allowed values:** `draft`, `published`, `archived`
+
+  **Example:** `?status=published`
+</ParamField>
+
+<ParamField query="locationId" type="integer">
+  Filter forms by location ID. Only forms associated with this location will be returned.
+
+  **Example:** `?locationId=101`
+</ParamField>
+
+<ParamField query="search" type="string">
+  Search forms by name or description. Case-insensitive partial match. Maximum 100 characters.
+
+  **Example:** `?search=feedback`
+</ParamField>
+
+<ParamField query="sortBy" type="string" default="createdAt">
+  Field to sort results by.
+
+  **Allowed values:** `createdAt`, `updatedAt`, `name`
+</ParamField>
+
+<ParamField query="sortOrder" type="string" default="desc">
+  Sort direction.
+
+  **Allowed values:** `asc`, `desc`
+</ParamField>
+
+## Response
+
+### Success (200)
+
+```json 200
+{
+  "success": true,
+  "message": "Forms retrieved successfully",
+  "data": {
+    "forms": [
+      {
+        "_id": "665a1b2c3d4e5f6a7b8c9d0e",
+        "name": "Guest Feedback Survey",
+        "slug": "guest-feedback-survey",
+        "description": "Collect guest feedback after checkout",
+        "status": "published",
+        "visibility": "public",
+        "totalQuestions": 12,
+        "totalResponses": 347,
+        "createdAt": "2026-01-15T08:30:00.000Z",
+        "updatedAt": "2026-03-10T14:20:00.000Z",
+        "publishedAt": "2026-01-20T10:00:00.000Z",
+        "tags": [
+          {
+            "_id": "664f1a2b3c4d5e6f7a8b9c0d",
+            "name": "Hospitality",
+            "color": "#7C3AED"
+          }
+        ],
+        "locations": [
+          {
+            "id": 101,
+            "name": "Downtown Hotel"
+          },
+          {
+            "id": 205,
+            "name": "Airport Branch"
+          }
+        ]
+      },
+      {
+        "_id": "69989c1459cae7f703956411",
+        "name": "Support Ticket Form",
+        "slug": "support-ticket-form-1",
+        "description": "Allow customers to submit support requests",
+        "status": "published",
+        "visibility": "public",
+        "totalQuestions": 8,
+        "totalResponses": 4,
+        "createdAt": "2026-02-20T17:38:28.804Z",
+        "updatedAt": "2026-03-11T05:42:36.353Z",
+        "publishedAt": "2026-03-11T05:42:36.351Z",
+        "tags": [],
+        "locations": []
+      }
+    ],
+    "pagination": {
+      "total": 2,
+      "page": 1,
+      "limit": 20,
+      "totalPages": 1
+    }
+  }
+}
+```
+
+### Validation Error (400)
+
+```json 400
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    {
+      "field": "limit",
+      "message": "Number must be less than or equal to 100"
+    }
+  ]
+}
+```
+
+### Missing Team ID (400)
+
+```json 400
+{
+  "success": false,
+  "message": "Team ID is required. Provide via X-Team-Id header."
+}
+```
+
+### Missing API Key (401)
+
+```json 401
+{
+  "success": false,
+  "message": "API key is required. Provide via X-API-Key header."
+}
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="List all published forms">
+    Retrieve only published forms for your account.
+
+    ```bash
+    curl -X GET "https://forms.rannkly.com/external-api/v1/forms?status=published" \
+      -H "X-API-Key: rfk_your_api_key"
+    ```
+  </Accordion>
+
+  <Accordion title="Filter by location">
+    Get forms associated with a specific location.
+
+    ```bash
+    curl -X GET "https://forms.rannkly.com/external-api/v1/forms?locationId=101&status=published" \
+      -H "X-API-Key: rfk_your_api_key"
+    ```
+  </Accordion>
+
+  <Accordion title="Search forms by name">
+    Search for forms containing "feedback" in their name or description.
+
+    ```bash
+    curl -X GET "https://forms.rannkly.com/external-api/v1/forms?search=feedback" \
+      -H "X-API-Key: rfk_your_api_key"
+    ```
+  </Accordion>
+
+  <Accordion title="Paginated listing with sorting">
+    Get the second page of forms sorted by name in ascending order.
+
+    ```bash
+    curl -X GET "https://forms.rannkly.com/external-api/v1/forms?page=2&limit=10&sortBy=name&sortOrder=asc" \
+      -H "X-API-Key: rfk_your_api_key"
+    ```
+  </Accordion>
+
+  <Accordion title="JavaScript integration example">
+    Fetch all published forms and display their names.
+
+    ```javascript
+    const res = await fetch(
+      "https://forms.rannkly.com/external-api/v1/forms?status=published",
+      {
+        headers: {
+          "X-API-Key": apiKey,
+        },
+      }
+    );
+    const { data } = await res.json();
+
+    console.log(`Found ${data.pagination.total} forms`);
+    data.forms.forEach((form) => {
+      console.log(`${form.name} (${form.slug}) — ${form.totalResponses} responses`);
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="Global API key with team ID">
+    When using a global API key, provide the team ID via header.
+
+    ```bash
+    curl -X GET "https://forms.rannkly.com/external-api/v1/forms?status=published" \
+      -H "X-API-Key: rfk_global_api_key" \
+      -H "X-Team-Id: 42"
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Notes
+
+- Deleted forms are always excluded from the results.
+- The `locations` array shows location names and IDs associated with each form. Use `locationId` query parameter to filter by a specific location.
+- The `tags` array shows tag metadata (name and color) for each form.
+- The `visibility` field reflects the form's access setting (`public` or `private`).
+- For form question details, use the [Get Form by Slug](/api-reference/forms/get-by-slug) endpoint with the form's `slug`.

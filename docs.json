@@ -47,6 +47,7 @@
                     {
                         "group": "Forms",
                         "pages": [
+                            "api-reference/forms/list",
                             "api-reference/forms/get-by-slug"
                         ]
                     },
